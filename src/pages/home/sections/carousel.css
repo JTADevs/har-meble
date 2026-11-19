@@ -1,0 +1,200 @@
+/* =============================================================================
+   Karuzela (wspólna dla Kategorii i Inspiracji) – prefiks .h-car-
+   Tor na pełną szerokość strony, przyciski okrągłe 48 px, kciuk postępu.
+   ============================================================================= */
+
+.h-car {
+  position: relative;
+}
+
+/* --- tor ------------------------------------------------------------------------
+   Wcięcie = lewa krawędź treści .h-container: (szerokość − max) / 2 + gutter.
+   Procenty liczone od szerokości strony (nie 100vw), więc pasek przewijania systemu
+   nie rozjeżdża wyrównania. Ten sam odstęp w scroll-padding = karty dociągają do linii kontenera. */
+.h-scroller.h-car__track {
+  --h-car-inset: calc(max(0px, (100% - var(--h-max)) / 2) + var(--h-gutter));
+  --h-car-room: 16px; /* zapas w pionie na podniesienie karty i obwódkę fokusu (overflow tnie) */
+  position: relative;
+  gap: var(--h-car-gap, clamp(12px, 1.3vw, 20px));
+  padding: var(--h-car-room) var(--h-car-inset);
+  margin: calc(var(--h-car-room) * -1) 0;
+  scroll-padding-inline: var(--h-car-inset);
+  overflow-y: hidden;
+  scroll-behavior: auto;
+}
+
+/* fokus klawiatury na torze: obwódka do środka (tor sięga krawędzi ekranu, na zewnątrz byłaby ucięta) */
+.h-scroller.h-car__track:focus-visible {
+  outline-offset: -2px;
+}
+
+.h-car__track[data-pressed] {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* przeciąganie myszą i animacja przycisków same dociągają do kart – snap wyłączony na ten czas */
+.h-car__track[data-dragging],
+.h-car__track[data-animating] {
+  scroll-snap-type: none;
+}
+
+.h-car__track[data-dragging] {
+  cursor: grabbing;
+}
+
+.h-car__track[data-dragging] > .h-car__slide {
+  pointer-events: none; /* bez hoverów i kliknięć w trakcie przeciągania */
+}
+
+/* --- slajdy i wjazd ze staggerem -------------------------------------------------- */
+.h-car__slide {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+}
+
+.h-car__track[data-reveal] > .h-car__slide {
+  opacity: 0;
+  transform: translate3d(min(10vw, 88px), 0, 0);
+  transition:
+    opacity 0.9s var(--h-ease-out),
+    transform 1.2s var(--h-ease-out);
+  transition-delay: calc(min(var(--i, 0), 6) * 85ms);
+}
+
+.h-car__track[data-reveal].is-in > .h-car__slide {
+  opacity: 1;
+  transform: none;
+}
+
+/* --- stopka: kciuk postępu ----------------------------------------------------------- */
+.h-car__foot {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-top: clamp(28px, 3.4vw, 52px);
+}
+
+.h-car__foot .h-progress {
+  flex: 1;
+}
+
+.h-car--dark .h-progress {
+  background: rgba(244, 239, 232, 0.16);
+}
+
+.h-car--dark .h-progress__bar {
+  background: var(--h-on-dark);
+}
+
+/* --- przyciski poprzedni / następny --------------------------------------------------- */
+.h-car-btns {
+  display: inline-flex;
+  gap: 10px;
+}
+
+.h-car-btn {
+  --car-fg: var(--h-ink);
+  --car-bd: rgba(29, 24, 20, 0.22);
+  --car-fill: var(--h-ink);
+  --car-fg-hover: var(--h-surface);
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 1px solid var(--car-bd);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--car-fg);
+  font: inherit;
+  cursor: pointer;
+  overflow: hidden;
+  isolation: isolate;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    color 0.35s var(--h-ease-out),
+    border-color 0.35s var(--h-ease-out),
+    opacity 0.35s var(--h-ease-out),
+    transform 0.35s var(--h-ease-out);
+}
+
+/* wypełnienie rozlewające się od środka */
+.h-car-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--car-fill);
+  transform: scale(0);
+  transition: transform 0.5s var(--h-ease-out);
+}
+
+.h-car-btn svg {
+  display: block;
+  transition: transform 0.45s var(--h-ease-out);
+}
+
+.h-car-btn:not([aria-disabled='true']):active {
+  transform: scale(0.94);
+}
+
+.h-car-btn[aria-disabled='true'] {
+  opacity: 0.32;
+  cursor: default;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .h-car-btn:not([aria-disabled='true']):hover {
+    color: var(--car-fg-hover);
+    border-color: var(--car-fill);
+  }
+
+  .h-car-btn:not([aria-disabled='true']):hover::before {
+    transform: scale(1);
+  }
+
+  .h-car-btn--prev:not([aria-disabled='true']):hover svg {
+    transform: translateX(-2px);
+  }
+
+  .h-car-btn--next:not([aria-disabled='true']):hover svg {
+    transform: translateX(2px);
+  }
+}
+
+.h-car-btns--dark .h-car-btn {
+  --car-fg: var(--h-on-dark);
+  --car-bd: rgba(244, 239, 232, 0.34);
+  --car-fill: var(--h-on-dark);
+  --car-fg-hover: var(--h-dark);
+}
+
+/* Telefon dotykowy: karuzelę przewija się palcem – przyciski tylko zabierałyby miejsce.
+   :has() chowa też opakowanie akcji w SectionHead, żeby nie zostawiało pustego odstępu. */
+@media (max-width: 639px) and (hover: none) {
+  .h-car-btns {
+    display: none;
+  }
+
+  .h-head > .h-reveal:has(> .h-car-btns) {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .h-car__track[data-reveal] > .h-car__slide {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .h-car-btn,
+  .h-car-btn::before,
+  .h-car-btn svg {
+    transition: none;
+  }
+}

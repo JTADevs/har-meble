@@ -1,0 +1,1231 @@
+/* =============================================================================
+   Wycena online (/wycena) – formularz zapytania (meble na wymiar / usługi B2B), wskazówki i potwierdzenie.
+   Prefiks: .s-quote-  Wyłącznie tokeny z home.css (.h-page); odcienie pochodne przez color-mix z tokenów.
+   ============================================================================= */
+
+.s-quote-section {
+  /* obrys pól i chipów ok. 3:1 do białego tła karty (WCAG 1.4.11 – granice kontrolek) */
+  --q-line-strong: color-mix(in srgb, var(--h-ink) 48%, var(--h-surface));
+  --q-line-soft: color-mix(in srgb, var(--h-on-dark) 14%, transparent);
+  --q-sticky-top: clamp(96px, 12vh, 124px); /* pod pływającą nawigacją */
+  padding: 0 0 var(--h-section-y);
+}
+
+/* --- układ: karta formularza + kolumna wskazówek (od 1024 px, próg = WIDE w QuotePage.jsx) ------------ */
+.s-quote-grid {
+  display: grid;
+  gap: clamp(28px, 4vw, 48px);
+}
+
+@media (min-width: 1024px) {
+  .s-quote-grid {
+    grid-template-columns: minmax(0, 1fr) clamp(300px, 27vw, 380px);
+    column-gap: clamp(40px, 5vw, 80px);
+  }
+
+  .s-quote-grid.is-done {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.s-quote-card {
+  container-type: inline-size; /* układ pól zależy od szerokości karty, nie okna */
+  min-width: 0;
+  padding: clamp(20px, 4.2vw, 56px);
+  border: 1px solid var(--h-line);
+  border-radius: var(--h-radius-lg);
+  background: var(--h-surface);
+  box-shadow: var(--h-shadow);
+}
+
+.s-quote-grid.is-done .s-quote-card {
+  max-width: 860px;
+}
+
+@media (max-width: 419px) {
+  .s-quote-card {
+    padding: 22px 16px 26px;
+    border-radius: var(--h-radius);
+  }
+}
+
+/* nagłówki-cele fokusu (tabIndex -1) – fokus z kodu, nie z klawiatury: bez obwódki */
+.s-quote-title:focus,
+.s-quote-success__title:focus {
+  outline: none;
+}
+
+/* --- nagłówek formularza --------------------------------------------------------------------------- */
+.s-quote-head {
+  display: grid;
+  gap: 12px;
+  margin-bottom: clamp(26px, 3vw, 36px);
+}
+
+.s-quote-title {
+  margin: 0;
+  font-size: clamp(1.6rem, 2.8vw, 2.25rem);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.s-quote-intro {
+  margin: 0;
+  max-width: 62ch;
+  font-size: 1.02rem;
+  line-height: 1.6;
+  color: var(--h-ink-2);
+  text-wrap: pretty;
+}
+
+.s-quote-reqnote {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--h-muted);
+}
+
+/* --- wybór trybu: dwie duże karty (radio) ---------------------------------------------------------- */
+.s-quote-modes {
+  min-width: 0;
+  margin: 0 0 clamp(24px, 3vw, 34px);
+  padding: 0;
+  border: 0;
+}
+
+.s-quote-modes > .s-quote-label {
+  margin-bottom: 12px;
+}
+
+.s-quote-modes__grid {
+  display: grid;
+  gap: 12px;
+}
+
+@container (min-width: 440px) {
+  .s-quote-modes__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.s-quote-mode {
+  position: relative;
+  display: grid;
+}
+
+/* natywne radio przykrywa całą kartę (przezroczyste) – klik, Tab i strzałki działają jak w zwykłym formularzu */
+.s-quote-mode__input,
+.s-quote-chip__input,
+.s-quote-drop__input {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.s-quote-mode__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'icon dot'
+    'title title'
+    'sub sub';
+  align-content: start;
+  gap: 6px 12px;
+  height: 100%;
+  padding: 20px 20px 22px;
+  border: 1px solid var(--h-line);
+  border-radius: var(--h-radius);
+  background: var(--h-bg);
+  color: var(--h-ink);
+  transition:
+    background-color 0.35s var(--h-ease),
+    border-color 0.35s var(--h-ease),
+    color 0.35s var(--h-ease);
+}
+
+.s-quote-mode__icon {
+  grid-area: icon;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 10px;
+  border-radius: 12px;
+  background: var(--h-surface);
+  color: var(--h-ink);
+  transition:
+    background-color 0.35s var(--h-ease),
+    color 0.35s var(--h-ease);
+}
+
+.s-quote-mode__dot {
+  grid-area: dot;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid var(--q-line-strong);
+  border-radius: 50%;
+  color: var(--h-surface);
+  transition:
+    border-color 0.35s var(--h-ease),
+    background-color 0.35s var(--h-ease);
+}
+
+.s-quote-mode__dot svg {
+  opacity: 0;
+  transform: scale(0.4);
+  transition:
+    opacity 0.3s var(--h-ease),
+    transform 0.45s var(--h-ease-out);
+}
+
+.s-quote-mode__title {
+  grid-area: title;
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+}
+
+.s-quote-mode__sub {
+  grid-area: sub;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--h-muted);
+  transition: color 0.35s var(--h-ease);
+}
+
+@media (hover: hover) {
+  .s-quote-mode__input:hover + .s-quote-mode__body {
+    border-color: var(--q-line-strong);
+  }
+}
+
+.s-quote-mode__input:checked + .s-quote-mode__body {
+  border-color: var(--h-dark);
+  background: var(--h-dark);
+  color: var(--h-on-dark);
+}
+
+.s-quote-mode__input:checked + .s-quote-mode__body .s-quote-mode__sub {
+  color: var(--h-on-dark-muted);
+}
+
+.s-quote-mode__input:checked + .s-quote-mode__body .s-quote-mode__icon {
+  background: color-mix(in srgb, var(--h-on-dark) 12%, transparent);
+  color: var(--h-on-dark);
+}
+
+.s-quote-mode__input:checked + .s-quote-mode__body .s-quote-mode__dot {
+  border-color: var(--h-accent);
+  background: var(--h-accent);
+}
+
+.s-quote-mode__input:checked + .s-quote-mode__body .s-quote-mode__dot svg {
+  opacity: 1;
+  transform: scale(0.5);
+}
+
+.s-quote-mode__input:focus-visible + .s-quote-mode__body {
+  outline: 2px solid var(--h-accent);
+  outline-offset: 3px;
+}
+
+/* --- kroki formularza -------------------------------------------------------------------------------- */
+.s-quote-step {
+  display: grid;
+  gap: clamp(20px, 2.4vw, 26px);
+  margin-top: clamp(28px, 3.4vw, 44px);
+  padding-top: clamp(24px, 3vw, 36px);
+  border-top: 1px solid var(--h-line);
+}
+
+.s-quote-step__title {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0;
+  font-size: clamp(1.2rem, 1.7vw, 1.45rem);
+  font-weight: 560;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.s-quote-step__num {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+  color: var(--h-accent-2);
+}
+
+.s-quote-row {
+  display: grid;
+  gap: clamp(20px, 2.4vw, 26px);
+}
+
+@container (min-width: 560px) {
+  .s-quote-row--2 {
+    grid-template-columns: 1fr 1fr;
+    column-gap: 20px;
+  }
+}
+
+/* --- pole: etykieta, podpowiedź, kontrolka, błąd -------------------------------------------------------- */
+.s-quote-field,
+.s-quote-group {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.s-quote-label {
+  display: block;
+  padding: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--h-ink);
+}
+
+/* legenda nie jest elementem siatki fieldsetu – odstęp od treści daje margines */
+.s-quote-group > .s-quote-label {
+  margin-bottom: 8px;
+}
+
+.s-quote-req {
+  margin-left: 3px;
+  color: var(--h-accent-2);
+}
+
+.s-quote-hint {
+  max-width: 64ch;
+  margin: -2px 0 2px;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--h-muted);
+  text-wrap: pretty;
+}
+
+.s-quote-group > .s-quote-hint {
+  margin-top: -6px;
+}
+
+.s-quote-input {
+  display: block;
+  width: 100%;
+  min-height: 52px;
+  margin: 0;
+  padding: 13px 16px;
+  border: 1px solid var(--q-line-strong);
+  border-radius: var(--h-radius-sm);
+  background: var(--h-surface);
+  color: var(--h-ink);
+  font: inherit;
+  font-size: 16px; /* 16 px – iOS nie powiększa strony przy wejściu w pole */
+  line-height: 1.45;
+  -webkit-appearance: none;
+  appearance: none;
+  transition:
+    border-color 0.2s var(--h-ease),
+    box-shadow 0.2s var(--h-ease);
+}
+
+.s-quote-input::placeholder {
+  color: var(--h-muted);
+  opacity: 1;
+}
+
+@media (hover: hover) {
+  .s-quote-input:hover {
+    border-color: var(--h-ink-2);
+  }
+}
+
+.s-quote-input:focus {
+  border-color: var(--h-ink);
+}
+
+.s-quote-input[aria-invalid='true'] {
+  border-color: var(--h-accent-2);
+  box-shadow: inset 0 0 0 1px var(--h-accent-2);
+}
+
+.s-quote-input--area {
+  min-height: 140px;
+  max-height: 28rem;
+  resize: vertical;
+  field-sizing: content; /* rośnie z treścią (Chrome); gdzie indziej – rows + ręczna zmiana wysokości */
+}
+
+.s-quote-input--short {
+  min-height: 84px;
+}
+
+.s-quote-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 550;
+  line-height: 1.45;
+  color: var(--h-accent-2);
+}
+
+.s-quote-error svg {
+  flex: none;
+  margin-top: 1px;
+}
+
+/* --- chipy (checkbox / radio) --------------------------------------------------------------------------- */
+.s-quote-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.s-quote-chip {
+  position: relative;
+  display: inline-flex;
+  max-width: 100%;
+}
+
+.s-quote-chip__face {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 10px 18px 10px 14px;
+  border: 1px solid var(--q-line-strong);
+  border-radius: var(--h-pill);
+  background: var(--h-surface);
+  color: var(--h-ink);
+  font-size: 0.95rem;
+  font-weight: 520;
+  line-height: 1.25;
+  transition:
+    background-color 0.25s var(--h-ease),
+    border-color 0.25s var(--h-ease),
+    color 0.25s var(--h-ease);
+}
+
+.s-quote-chip__mark {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--q-line-strong);
+  border-radius: 5px;
+  color: var(--h-ink);
+  transition:
+    background-color 0.25s var(--h-ease),
+    border-color 0.25s var(--h-ease);
+}
+
+.s-quote-chip--radio .s-quote-chip__mark {
+  border-radius: 50%;
+}
+
+/* znacznik ukryty przez opacity (nie kolorem) – w trybie wysokiego kontrastu zaznaczenie nadal widać */
+.s-quote-chip__mark svg {
+  opacity: 0;
+  transform: scale(0.6);
+  transition:
+    opacity 0.2s var(--h-ease),
+    transform 0.35s var(--h-ease-out);
+}
+
+@media (hover: hover) {
+  .s-quote-chip__input:hover + .s-quote-chip__face {
+    border-color: var(--h-ink);
+  }
+}
+
+.s-quote-chip__input:checked + .s-quote-chip__face {
+  border-color: var(--h-ink);
+  background: var(--h-ink);
+  color: var(--h-surface);
+}
+
+.s-quote-chip__input:checked + .s-quote-chip__face .s-quote-chip__mark {
+  border-color: var(--h-surface);
+  background: var(--h-surface);
+}
+
+.s-quote-chip__input:checked + .s-quote-chip__face .s-quote-chip__mark svg {
+  opacity: 1;
+  transform: none;
+}
+
+.s-quote-chip__input:focus-visible + .s-quote-chip__face {
+  outline: 2px solid var(--h-accent);
+  outline-offset: 3px;
+}
+
+.s-quote-chip__input[aria-invalid='true'] + .s-quote-chip__face {
+  border-color: var(--h-accent-2);
+}
+
+/* podpowiedź pod wyborem „Czy masz gotowy projekt?” */
+.s-quote-tipline {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 6px 0 0;
+  padding: 12px 14px;
+  border-radius: var(--h-radius-sm);
+  background: var(--h-bg);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--h-ink-2);
+  animation: s-quote-in 0.45s var(--h-ease-out) both;
+}
+
+.s-quote-tipline svg {
+  flex: none;
+  color: var(--h-accent-2);
+}
+
+/* pola B2B pokazywane po zaznaczeniu usługi */
+.s-quote-cond {
+  display: grid;
+  animation: s-quote-in 0.5s var(--h-ease-out) both;
+}
+
+@keyframes s-quote-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -6px, 0);
+  }
+}
+
+/* --- załączniki ----------------------------------------------------------------------------------------- */
+.s-quote-drop {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 176px;
+  padding: 28px 20px;
+  border: 1.5px dashed var(--q-line-strong);
+  border-radius: var(--h-radius);
+  background: var(--h-bg);
+  text-align: center;
+  transition:
+    border-color 0.25s var(--h-ease),
+    background-color 0.25s var(--h-ease);
+}
+
+.s-quote-drop__input::file-selector-button {
+  cursor: pointer;
+}
+
+.s-quote-drop__face {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.s-quote-drop__icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 6px;
+  border-radius: 50%;
+  background: var(--h-surface);
+  color: var(--h-ink);
+  box-shadow: var(--h-shadow);
+  transition: transform 0.45s var(--h-ease-out);
+}
+
+.s-quote-drop__title {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.s-quote-drop__or {
+  font-size: 0.875rem;
+  color: var(--h-muted);
+}
+
+.s-quote-drop__btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 4px;
+  padding: 0 22px;
+  border: 1px solid var(--q-line-strong);
+  border-radius: var(--h-pill);
+  background: var(--h-surface);
+  font-size: 0.95rem;
+  font-weight: 560;
+  transition: border-color 0.25s var(--h-ease);
+}
+
+.s-quote-drop__title--touch {
+  display: none;
+}
+
+/* ekrany dotykowe bez myszy: bez „przeciągnij” – sama zachęta do wyboru plików */
+@media (hover: none) and (pointer: coarse) {
+  .s-quote-drop__title,
+  .s-quote-drop__or {
+    display: none;
+  }
+
+  .s-quote-drop__title--touch {
+    display: block;
+  }
+}
+
+@media (hover: hover) {
+  .s-quote-drop:hover {
+    border-color: var(--h-ink-2);
+  }
+
+  .s-quote-drop:hover .s-quote-drop__btn {
+    border-color: var(--h-ink);
+  }
+}
+
+.s-quote-drop.is-drag {
+  border-color: var(--h-accent);
+  background: var(--h-accent-soft);
+}
+
+.s-quote-drop.is-drag .s-quote-drop__icon {
+  transform: translateY(-4px);
+}
+
+.s-quote-drop.is-invalid {
+  border-color: var(--h-accent-2);
+}
+
+.s-quote-drop:has(.s-quote-drop__input:focus-visible) {
+  outline: 2px solid var(--h-accent);
+  outline-offset: 3px;
+}
+
+.s-quote-issues {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: var(--h-radius-sm);
+  background: var(--h-accent-soft);
+  list-style: none;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--h-ink);
+  overflow-wrap: anywhere;
+}
+
+.s-quote-issues li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.s-quote-issues svg {
+  flex: none;
+  margin-top: 1px;
+  color: var(--h-accent-2);
+}
+
+.s-quote-files__sum {
+  margin: 4px 0 0;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--h-muted);
+}
+
+.s-quote-files {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.s-quote-file {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 8px 6px 8px 12px;
+  border: 1px solid var(--h-line);
+  border-radius: var(--h-radius-sm);
+  background: var(--h-surface);
+  animation: s-quote-in 0.45s var(--h-ease-out) both;
+}
+
+.s-quote-file__ext {
+  min-width: 44px;
+  padding: 5px 6px;
+  border-radius: 8px;
+  background: var(--h-bg-2);
+  color: var(--h-ink-2);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.s-quote-file__meta {
+  display: grid;
+  min-width: 0;
+}
+
+.s-quote-file__name {
+  overflow: hidden;
+  font-size: 0.95rem;
+  font-weight: 540;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.s-quote-file__size {
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--h-muted);
+}
+
+.s-quote-file__remove {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--h-ink-2);
+  cursor: pointer;
+  transition:
+    background-color 0.2s var(--h-ease),
+    color 0.2s var(--h-ease);
+}
+
+@media (hover: hover) {
+  .s-quote-file__remove:hover {
+    background: var(--h-bg);
+    color: var(--h-ink);
+  }
+}
+
+/* --- wysyłka ---------------------------------------------------------------------------------------------- */
+.s-quote-submit {
+  display: grid;
+  gap: 18px;
+  margin-top: clamp(32px, 3.6vw, 48px);
+  padding-top: clamp(24px, 3vw, 36px);
+  border-top: 1px solid var(--h-line);
+}
+
+.s-quote-submit__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 28px;
+}
+
+.s-quote-submit__btn {
+  min-width: 232px;
+}
+
+.s-quote-submit__btn[aria-disabled='true'] {
+  cursor: progress;
+  opacity: 0.86;
+}
+
+.s-quote-submit__note {
+  flex: 1 1 280px;
+  max-width: 52ch;
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--h-ink-2);
+}
+
+@media (max-width: 559px) {
+  .s-quote-submit__btn {
+    width: 100%;
+  }
+}
+
+.s-quote-progress {
+  height: 4px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--h-line);
+}
+
+.s-quote-progress__bar {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--h-accent);
+  transform-origin: left center;
+  transition: transform 0.25s linear;
+}
+
+.s-quote-clause {
+  max-width: 78ch;
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--h-muted);
+}
+
+.s-quote-clause a {
+  color: var(--h-ink-2);
+  text-underline-offset: 2px;
+}
+
+.s-quote-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--h-accent-2) 35%, transparent);
+  border-radius: var(--h-radius-sm);
+  background: var(--h-accent-soft);
+  color: var(--h-ink);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.s-quote-alert svg {
+  flex: none;
+  margin-top: 1px;
+  color: var(--h-accent-2);
+}
+
+.s-quote-alert p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.s-quote-alert a {
+  font-weight: 600;
+}
+
+/* pułapka na boty – poza ekranem, nie display:none (część botów pomija ukryte pola) */
+.s-quote-hp {
+  position: absolute;
+  left: -10000px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* --- kolumna wskazówek (desktop) ----------------------------------------------------------------------- */
+.s-quote-aside {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.s-quote-aside__cards {
+  display: grid;
+  gap: 16px;
+}
+
+.s-quote-tipcard {
+  display: grid;
+  gap: 10px;
+  padding: 24px;
+  border: 1px solid var(--h-line);
+  border-radius: var(--h-radius);
+}
+
+.s-quote-tipcard__icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 4px;
+  border: 1px solid var(--h-line);
+  border-radius: 12px;
+  background: var(--h-surface);
+  color: var(--h-ink);
+}
+
+.s-quote-tipcard__title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+}
+
+.s-quote-tipcard__text {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--h-ink-2);
+  text-wrap: pretty;
+}
+
+.s-quote-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0;
+  padding: 16px 18px;
+  border-radius: var(--h-radius);
+  background: var(--h-accent-soft);
+  font-size: 0.925rem;
+  line-height: 1.55;
+  color: var(--h-ink);
+}
+
+.s-quote-note svg {
+  flex: none;
+  color: var(--h-accent-2);
+}
+
+/* lista zostaje obok wypełnianych pól; na niskich ekranach (nie zmieściłaby się) przewija się ze stroną */
+@media (min-height: 760px) {
+  .s-quote-aside__sticky {
+    position: sticky;
+    top: var(--q-sticky-top);
+  }
+}
+
+.s-quote-checklist {
+  padding: clamp(24px, 2.4vw, 32px);
+  border-radius: var(--h-radius-lg);
+  background:
+    radial-gradient(90% 70% at 100% 0%, color-mix(in srgb, var(--h-accent) 22%, transparent) 0%, transparent 62%),
+    var(--h-dark);
+  color: var(--h-on-dark);
+}
+
+.s-quote-checklist__eyebrow {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--h-on-dark-muted);
+}
+
+.s-quote-checklist__title {
+  margin: 0 0 18px;
+  font-size: clamp(1.25rem, 1.6vw, 1.45rem);
+  font-weight: 560;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.s-quote-checklist__list,
+.s-quote-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.s-quote-checklist__list li,
+.s-quote-list li {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 12px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.s-quote-checklist__list svg,
+.s-quote-list svg {
+  margin-top: 1px;
+}
+
+.s-quote-checklist__list svg {
+  color: var(--h-accent);
+}
+
+.s-quote-list svg {
+  color: var(--h-accent-2);
+}
+
+.s-quote-checklist__note,
+.s-quote-checklist__mail {
+  margin: 20px 0 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--q-line-soft);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--h-on-dark-muted);
+}
+
+.s-quote-checklist__mail {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.s-quote-checklist__note + .s-quote-checklist__mail {
+  margin-top: 14px;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.s-quote-checklist__mail svg,
+.s-quote-tips__mail svg {
+  flex: none;
+  margin-top: 1px;
+}
+
+.s-quote-checklist__mail a {
+  font-weight: 600;
+  color: var(--h-on-dark);
+  overflow-wrap: anywhere;
+}
+
+/* --- wskazówki na telefonie i tablecie: rozwijane wiersze --------------------------------------------- */
+.s-quote-tips {
+  margin: 0 0 clamp(4px, 1vw, 8px);
+  border-top: 1px solid var(--h-line);
+}
+
+.s-quote-tip {
+  border-bottom: 1px solid var(--h-line);
+}
+
+.s-quote-tip__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 56px;
+  padding: 10px 0;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 560;
+  letter-spacing: -0.01em;
+  list-style: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.s-quote-tip__summary::-webkit-details-marker {
+  display: none;
+}
+
+/* plus → minus jak w FAQ strony głównej */
+.s-quote-tip__icon {
+  position: relative;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border: 1px solid color-mix(in srgb, var(--h-ink) 18%, transparent);
+  border-radius: 50%;
+  color: var(--h-ink);
+  transition:
+    background-color 0.3s var(--h-ease),
+    border-color 0.3s var(--h-ease),
+    color 0.3s var(--h-ease);
+}
+
+.s-quote-tip__icon::before,
+.s-quote-tip__icon::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 12px;
+  height: 1.5px;
+  margin: -0.75px 0 0 -6px;
+  border-radius: 1px;
+  background: currentColor;
+  transition: transform 0.45s var(--h-ease-out);
+}
+
+.s-quote-tip__icon::after {
+  transform: rotate(90deg);
+}
+
+.s-quote-tip[open] .s-quote-tip__icon {
+  border-color: var(--h-ink);
+  background: var(--h-ink);
+  color: var(--h-surface);
+}
+
+.s-quote-tip[open] .s-quote-tip__icon::before,
+.s-quote-tip[open] .s-quote-tip__icon::after {
+  transform: rotate(180deg);
+}
+
+.s-quote-tip__body {
+  display: grid;
+  gap: 12px;
+  padding: 0 0 18px;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--h-ink-2);
+  animation: s-quote-in 0.4s var(--h-ease-out) both;
+}
+
+.s-quote-tip__body p {
+  margin: 0;
+}
+
+.s-quote-tips__mail {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 14px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--h-ink-2);
+}
+
+.s-quote-tips__mail a {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* --- potwierdzenie ------------------------------------------------------------------------------------------ */
+.s-quote-success {
+  display: grid;
+  justify-items: start;
+  gap: clamp(18px, 2vw, 24px);
+}
+
+.s-quote-success__icon {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--h-accent-soft);
+  color: var(--h-accent-2);
+  animation: s-quote-pop 0.7s var(--h-ease-out) both;
+}
+
+@keyframes s-quote-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+.s-quote-success__title {
+  max-width: 20ch;
+  margin: 0;
+  font-size: clamp(1.9rem, 3.4vw, 2.75rem);
+  font-weight: 500;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+.s-quote-summary {
+  display: grid;
+  width: 100%;
+  margin: 0;
+  border-top: 1px solid var(--h-line);
+}
+
+.s-quote-summary__row {
+  display: grid;
+  grid-template-columns: minmax(0, 200px) minmax(0, 1fr);
+  gap: 4px 20px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--h-line);
+}
+
+.s-quote-summary dt {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--h-muted);
+}
+
+.s-quote-summary dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 479px) {
+  .s-quote-summary__row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.s-quote-success__note {
+  max-width: 60ch;
+  margin: 0;
+  line-height: 1.6;
+  color: var(--h-ink-2);
+}
+
+.s-quote-success__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+@media (max-width: 479px) {
+  .s-quote-success__actions .h-btn {
+    flex: 1 1 100%;
+  }
+}
+
+/* --- tryb wysokiego kontrastu: zaznaczenie widać obwódką systemową (tła są wtedy wymuszane) ------------- */
+@media (forced-colors: active) {
+  .s-quote-mode__input:checked + .s-quote-mode__body,
+  .s-quote-chip__input:checked + .s-quote-chip__face {
+    outline: 3px solid Highlight;
+    outline-offset: -3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .s-quote-tipline,
+  .s-quote-cond,
+  .s-quote-file,
+  .s-quote-tip__body,
+  .s-quote-success__icon {
+    animation: none;
+  }
+
+  .s-quote-mode__body,
+  .s-quote-mode__icon,
+  .s-quote-mode__dot,
+  .s-quote-mode__dot svg,
+  .s-quote-mode__sub,
+  .s-quote-chip__face,
+  .s-quote-chip__mark,
+  .s-quote-chip__mark svg,
+  .s-quote-input,
+  .s-quote-drop,
+  .s-quote-drop__icon,
+  .s-quote-drop__btn,
+  .s-quote-file__remove,
+  .s-quote-progress__bar,
+  .s-quote-tip__icon,
+  .s-quote-tip__icon::before,
+  .s-quote-tip__icon::after {
+    transition: none;
+  }
+}

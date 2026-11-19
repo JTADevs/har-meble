@@ -1,0 +1,41 @@
+{
+  "duration": 17.833,
+  "fps": 24,
+  "shots": [
+    {
+      "key": "kuchnia",
+      "label": "Kuchnia"
+    },
+    {
+      "key": "salon",
+      "label": "Salon"
+    },
+    {
+      "key": "sypialnia",
+      "label": "Sypialnia"
+    }
+  ],
+  "crossfade": 0.8,
+  "starts": [
+    0,
+    5.604,
+    10.396
+  ],
+  "clean": [
+    0,
+    6.021,
+    10.813
+  ],
+  "loopFrom": 17.438,
+  "src": {
+    "720": "/video/hero-720.mp4",
+    "1080": "/video/hero-1080.mp4",
+    "mobile": "/video/hero-mobile.mp4"
+  },
+  "poster": "/video/hero-poster.jpg",
+  "posterMobile": "/video/hero-poster-mobile.jpg",
+  "mobileCrop": {
+    "x": 848,
+    "width": 608
+  }
+}

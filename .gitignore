@@ -1,0 +1,14 @@
+node_modules
+dist
+# baza JSON (konta, sesje, zapytania z formularza i ich załączniki) – tworzy ją serwer przy starcie
+data
+.DS_Store
+*.log
+.env
+.env.*
+
+# Pliki robocze (filmy i zdjęcia z Google Flow, klatki, rendery) zostają lokalnie. W repozytorium tylko klipy
+# źródłowe obecnego filmu w hero – do ponownego montażu: npm run video:hero (README, sekcja „Strona główna”).
+exports/*
+!exports/flow-veo/
+exports/flow-veo/0-*

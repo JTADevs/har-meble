@@ -1,0 +1,305 @@
+/* =============================================================================
+   FAQ (#faq) – nagłówek (sticky na desktopie) + akordeon pytań. Prefiks: .h-faq-
+   ============================================================================= */
+
+.h-faq-grid {
+  display: grid;
+  gap: clamp(36px, 6vw, 64px);
+}
+
+@media (min-width: 960px) {
+  .h-faq-grid {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    column-gap: clamp(48px, 7vw, 128px);
+    align-items: start;
+  }
+
+  /* lewa kolumna zostaje na miejscu, gdy przewijamy długą listę odpowiedzi */
+  .h-faq-intro {
+    position: sticky;
+    top: clamp(96px, 14vh, 136px);
+  }
+}
+
+.h-faq-intro .h-head {
+  margin-bottom: clamp(20px, 2.4vw, 32px);
+}
+
+.h-faq-help {
+  display: grid;
+  justify-items: start;
+  gap: 20px;
+  max-width: 40ch;
+}
+
+.h-faq-help-text {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--h-ink-2);
+}
+
+.h-faq-help-link:hover .h-btn__arrow {
+  transform: translateX(4px);
+}
+
+/* --- lista ----------------------------------------------------------------------- */
+.h-faq-list {
+  --faq-num: 44px; /* kolumna z numerem */
+  --faq-gap: 16px;
+  --faq-icon: 40px;
+  position: relative;
+}
+
+/* cienkie linie między pozycjami – rysują się od lewej przy wejściu w widok */
+.h-faq-item {
+  position: relative;
+}
+
+.h-faq-item::before,
+.h-faq-list::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--h-line);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 1.2s var(--h-ease-out) calc(var(--faq-i, 0) * 70ms);
+}
+
+.h-faq-item::before {
+  top: 0;
+}
+
+.h-faq-list::after {
+  bottom: 0;
+  transition-delay: calc(var(--faq-n, 7) * 70ms);
+}
+
+.h-faq-list.is-in .h-faq-item::before,
+.h-faq-list.is-in::after {
+  transform: none;
+}
+
+.h-faq-item-inner {
+  opacity: 0;
+  transform: translate3d(0, 18px, 0);
+  transition:
+    opacity 0.8s var(--h-ease-out) calc(var(--faq-i, 0) * 70ms + 120ms),
+    transform 1s var(--h-ease-out) calc(var(--faq-i, 0) * 70ms + 120ms);
+}
+
+.h-faq-list.is-in .h-faq-item-inner {
+  opacity: 1;
+  transform: none;
+}
+
+/* --- pytanie (nagłówek + przycisk) ------------------------------------------------- */
+.h-faq-q {
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+}
+
+.h-faq-btn {
+  display: grid;
+  grid-template-columns: var(--faq-num) minmax(0, 1fr) var(--faq-icon);
+  column-gap: var(--faq-gap);
+  align-items: baseline;
+  width: 100%;
+  margin: 0;
+  padding: clamp(20px, 2.2vw, 28px) 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--h-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.h-faq-num {
+  font-size: 13px;
+  font-weight: 550;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--h-muted);
+  transition: color 0.3s var(--h-ease);
+}
+
+.h-faq-q-text {
+  font-size: clamp(1.08rem, 1.5vw, 1.32rem);
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  text-wrap: pretty;
+  transition: transform 0.5s var(--h-ease-out);
+}
+
+/* ikona: dwie kreski w kółku; pionowa obraca się do poziomu (plus → minus), pozioma robi pół obrotu */
+.h-faq-icon {
+  position: relative;
+  align-self: center;
+  justify-self: end;
+  width: var(--faq-icon);
+  height: var(--faq-icon);
+  border: 1px solid color-mix(in srgb, var(--h-ink) 18%, transparent);
+  border-radius: 50%;
+  color: var(--h-ink);
+  transition:
+    background-color 0.35s var(--h-ease),
+    border-color 0.35s var(--h-ease),
+    color 0.35s var(--h-ease);
+}
+
+.h-faq-icon::before,
+.h-faq-icon::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 14px;
+  height: 1.5px;
+  margin: -0.75px 0 0 -7px;
+  border-radius: 1px;
+  background: currentColor;
+  transition: transform 0.6s var(--h-ease-out);
+}
+
+.h-faq-icon::after {
+  transform: rotate(90deg);
+}
+
+.h-faq-item.is-open .h-faq-icon {
+  border-color: var(--h-ink);
+  background: var(--h-ink);
+  color: var(--h-surface);
+}
+
+.h-faq-item.is-open .h-faq-icon::before,
+.h-faq-item.is-open .h-faq-icon::after {
+  transform: rotate(180deg);
+}
+
+.h-faq-item.is-open .h-faq-num {
+  color: var(--h-accent-2);
+}
+
+@media (hover: hover) {
+  .h-faq-btn:hover .h-faq-icon {
+    border-color: var(--h-ink);
+    background: var(--h-ink);
+    color: var(--h-surface);
+  }
+
+  /* --h-accent-2: biała ikona ma na nim kontrast ≥ 4.5:1 (na --h-accent tylko ~4.4:1) */
+  .h-faq-item.is-open .h-faq-btn:hover .h-faq-icon {
+    border-color: var(--h-accent-2);
+    background: var(--h-accent-2);
+  }
+
+  .h-faq-btn:hover .h-faq-num {
+    color: var(--h-accent-2);
+  }
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .h-faq-btn:hover .h-faq-q-text {
+    transform: translateX(6px);
+  }
+}
+
+/* --- odpowiedź: płynna wysokość 0fr → 1fr ------------------------------------------ */
+.h-faq-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  visibility: hidden;
+  transition:
+    grid-template-rows 0.5s var(--h-ease-in-out),
+    visibility 0s linear 0.5s;
+}
+
+.h-faq-item.is-open .h-faq-panel {
+  grid-template-rows: 1fr;
+  visibility: visible;
+  transition:
+    grid-template-rows 0.65s var(--h-ease-out),
+    visibility 0s linear 0s;
+}
+
+.h-faq-panel-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.h-faq-a {
+  margin: 0;
+  padding: 0 calc(var(--faq-icon) + var(--faq-gap)) clamp(24px, 2.6vw, 32px) calc(var(--faq-num) + var(--faq-gap));
+  font-size: clamp(1rem, 1.1vw, 1.0625rem);
+  line-height: 1.65;
+  color: var(--h-ink-2);
+  text-wrap: pretty;
+  opacity: 0;
+  transform: translate3d(0, -6px, 0);
+  transition:
+    opacity 0.3s var(--h-ease),
+    transform 0.5s var(--h-ease-out);
+}
+
+.h-faq-item.is-open .h-faq-a {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.6s var(--h-ease-out) 0.12s,
+    transform 0.8s var(--h-ease-out) 0.08s;
+}
+
+/* --- telefon: bez numerów, odpowiedź na pełną szerokość ---------------------------- */
+@media (max-width: 559px) {
+  .h-faq-list {
+    --faq-gap: 14px;
+    --faq-icon: 36px;
+  }
+
+  .h-faq-btn {
+    grid-template-columns: minmax(0, 1fr) var(--faq-icon);
+  }
+
+  .h-faq-num {
+    display: none;
+  }
+
+  .h-faq-a {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .h-faq-item::before,
+  .h-faq-list::after,
+  .h-faq-item-inner {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .h-faq-panel,
+  .h-faq-item.is-open .h-faq-panel,
+  .h-faq-a,
+  .h-faq-item.is-open .h-faq-a,
+  .h-faq-icon,
+  .h-faq-icon::before,
+  .h-faq-icon::after,
+  .h-faq-num,
+  .h-faq-q-text,
+  .h-faq-help-link .h-btn__arrow {
+    transition: none;
+  }
+}

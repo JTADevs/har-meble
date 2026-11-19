@@ -1,0 +1,74 @@
+/* =============================================================================
+   Podstrony wizytówki – układ wspólny (PageShell). Prefiks: .s-
+   Wyłącznie tokeny z home.css (.h-page); każda podstrona ma własny plik CSS z własnym prefiksem.
+   ============================================================================= */
+
+/* nawigacja pływa nad treścią (ok. 72 px + margines) */
+.s-head {
+  padding: clamp(128px, 15vw, 196px) 0 clamp(48px, 6vw, 88px);
+}
+
+.s-page--dark .s-head {
+  background: var(--h-dark);
+  color: var(--h-on-dark);
+  border-radius: 0 0 var(--h-radius-lg) var(--h-radius-lg);
+}
+
+.s-page--dark .s-head .h-eyebrow,
+.s-page--dark .s-head .h-lead {
+  color: var(--h-on-dark-muted);
+}
+
+.s-head__inner {
+  display: grid;
+  gap: clamp(32px, 4vw, 56px);
+}
+
+@media (min-width: 960px) {
+  .s-head--aside .s-head__inner {
+    grid-template-columns: minmax(0, 1.35fr) minmax(300px, 1fr);
+    align-items: end;
+    column-gap: clamp(40px, 6vw, 112px);
+  }
+}
+
+.s-head__title {
+  max-width: 16ch;
+  text-wrap: balance;
+}
+
+.s-head__lead {
+  margin-top: clamp(20px, 2.4vw, 32px);
+  max-width: 60ch;
+}
+
+.s-head__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: clamp(24px, 3vw, 40px);
+}
+
+/* sekcja treści podstrony o węższej kolumnie (np. polityka prywatności) */
+.s-prose {
+  max-width: 72ch;
+}
+
+.s-prose h2 {
+  margin: 2.2em 0 0.6em;
+  font-size: clamp(1.25rem, 1.8vw, 1.55rem);
+  font-weight: 560;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.s-prose p,
+.s-prose li {
+  color: var(--h-ink-2);
+  line-height: 1.65;
+}
+
+.s-prose ul,
+.s-prose ol {
+  padding-left: 1.2em;
+}

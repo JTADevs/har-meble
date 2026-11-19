@@ -1,0 +1,261 @@
+/* =============================================================================
+   TrustBar – wąski pasek konkretów pod sekcją kategorii.
+   Desktop: 5 równych pól z cienkimi separatorami. <900 px: marquee (lista zduplikowana) + przycisk pauzy.
+   Prefiks klas: .h-trust-
+   ============================================================================= */
+
+.h-trust-section {
+  --h-trust-dur: 34s;
+  position: relative;
+  background: var(--h-bg);
+  border-top: 1px solid var(--h-line);
+  border-bottom: 1px solid var(--h-line);
+}
+
+.h-trust-list {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.h-trust-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--h-ink);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.28;
+  letter-spacing: -0.01em;
+  opacity: 0;
+  transform: translate3d(0, 10px, 0);
+  transition:
+    opacity 0.7s var(--h-ease-out),
+    transform 0.9s var(--h-ease-out);
+  transition-delay: calc(var(--i, 0) * 70ms);
+}
+
+.h-trust-viewport.is-in .h-trust-item {
+  opacity: 1;
+  transform: none;
+}
+
+.h-trust-icon {
+  flex: none;
+  display: block;
+  width: 24px;
+  height: 24px;
+  color: var(--h-accent);
+}
+
+.h-trust-label {
+  text-align: left;
+}
+
+/* --- desktop: równy rząd ------------------------------------------------------- */
+@media (min-width: 900px) {
+  .h-trust-list {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    padding: clamp(18px, 1.9vw, 26px) 0;
+  }
+
+  .h-trust-list--clone {
+    display: none;
+  }
+
+  .h-trust-item {
+    justify-content: center;
+    gap: clamp(10px, 1vw, 12px);
+    padding: 0 clamp(8px, 1.2vw, 18px);
+    font-size: clamp(14px, 1.15vw, 15px);
+  }
+
+  .h-trust-item + .h-trust-item::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 1px;
+    height: 34px;
+    margin-top: -17px;
+    background: var(--h-line);
+  }
+
+  /* łamanie w zaplanowanym miejscu → etykieta ma szerokość najdłuższej linii, grupa jest naprawdę wyśrodkowana */
+  .h-trust-line {
+    display: block;
+    white-space: nowrap;
+  }
+}
+
+/* --- telefon / tablet: marquee ---------------------------------------------------- */
+@media (max-width: 899.98px) {
+  /* rząd: pasek (wygaszony na krawędziach) + przycisk pauzy na końcu */
+  .h-trust-section .h-trust-container {
+    display: flex;
+    align-items: center;
+    max-width: none;
+    padding: 0;
+  }
+
+  .h-trust-viewport {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 12%, #000 88%, transparent 100%);
+    mask-image: linear-gradient(90deg, transparent 0, #000 12%, #000 88%, transparent 100%);
+  }
+
+  .h-trust-section .h-trust-viewport:focus-visible {
+    outline-offset: -3px;
+  }
+
+  .h-trust-track {
+    display: flex;
+    width: max-content;
+    animation: h-trust-marquee var(--h-trust-dur) linear infinite;
+    will-change: transform;
+  }
+
+  .h-trust-list {
+    flex: none;
+    padding: 17px 0;
+  }
+
+  /* każdy element z separatorem po lewej → szew między kopiami listy jest niewidoczny */
+  .h-trust-item {
+    flex: none;
+    padding: 0 22px;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
+  .h-trust-item::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 1px;
+    height: 18px;
+    margin-top: -9px;
+    background: var(--h-line);
+  }
+
+  /* pauza: najechanie myszą (chwilowa), przycisk (trwała), pasek poza ekranem */
+  .h-trust-viewport:hover .h-trust-track,
+  .h-trust-section[data-paused] .h-trust-track,
+  .h-trust-section[data-offscreen] .h-trust-track {
+    animation-play-state: paused;
+  }
+}
+
+/* przycisk „Zatrzymaj / Wznów przesuwanie” – renderowany tylko, gdy pasek się przesuwa (<900 px, bez reduced motion) */
+.h-trust-toggle {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin: 0 var(--h-gutter) 0 4px;
+  padding: 0;
+  border: 1px solid rgba(29, 24, 20, 0.2);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--h-ink);
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color 0.3s var(--h-ease),
+    border-color 0.3s var(--h-ease),
+    color 0.3s var(--h-ease),
+    transform 0.35s var(--h-ease-out);
+}
+
+/* obszar dotyku 46 px przy 36 px widocznego kółka */
+.h-trust-toggle::before {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+}
+
+.h-trust-toggle svg {
+  display: block;
+}
+
+.h-trust-toggle:active {
+  transform: scale(0.94);
+}
+
+@media (hover: hover) {
+  .h-trust-toggle:hover {
+    background: var(--h-ink);
+    border-color: var(--h-ink);
+    color: var(--h-surface);
+  }
+}
+
+@keyframes h-trust-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+/* --- ograniczony ruch ----------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .h-trust-item {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  /* pasek stoi, więc przycisk pauzy jest zbędny (komponent i tak go wtedy nie renderuje) */
+  .h-trust-toggle {
+    display: none;
+  }
+}
+
+/* telefon + ograniczony ruch: bez animacji, pasek przewijany palcem (wygaszenie tylko z prawej jako podpowiedź) */
+@media (max-width: 899.98px) and (prefers-reduced-motion: reduce) {
+  .h-trust-viewport {
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(90deg, #000 82%, transparent 100%);
+    mask-image: linear-gradient(90deg, #000 82%, transparent 100%);
+  }
+
+  .h-trust-viewport::-webkit-scrollbar {
+    display: none;
+  }
+
+  .h-trust-track {
+    animation: none;
+    will-change: auto;
+  }
+
+  .h-trust-list--clone {
+    display: none;
+  }
+
+  .h-trust-list .h-trust-item:first-child {
+    padding-left: var(--h-gutter);
+  }
+
+  .h-trust-list .h-trust-item:first-child::before {
+    display: none;
+  }
+
+  .h-trust-list .h-trust-item:last-child {
+    padding-right: var(--h-gutter);
+  }
+}

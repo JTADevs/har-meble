@@ -1,0 +1,491 @@
+/* Nawigacja strony głównej: logo + pływająca „pigułka”, panel konfiguratorów, menu mobilne. */
+.hnav {
+  /* tokeny systemu projektowego – te same wartości co na .h-page (home.css). Nawigacja leży poza .h-page
+     i jest w głównym pakiecie (rysuje się, zanim wczyta się home.css), więc ma własną kopię potrzebnych tokenów. */
+  --h-bg: #f4f1ec;
+  --h-bg-2: #ebe5dc;
+  --h-bg-3: #e2dbd0;
+  --h-ink: #1d1814;
+  --h-muted: #6b6157;
+  --h-line: #ddd4c7;
+  --h-dark: #2a211c;
+  --h-on-dark: #f4efe8;
+  --h-on-dark-muted: rgba(244, 239, 232, 0.66);
+  --h-accent-2: #8e4f22;
+  --h-radius-sm: 12px;
+  --h-radius: 20px;
+  --h-pill: 999px;
+  --h-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  /* własne wartości nawigacji */
+  --hnav-fg: #fff;
+  --hnav-mark-ink: var(--h-dark);
+  --hnav-glass: rgba(255, 255, 255, 0.92);
+  --hnav-glass-shadow: 0 1px 2px rgba(29, 24, 20, 0.06), 0 8px 28px rgba(29, 24, 20, 0.1);
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 60;
+  font-family: 'Inter Tight Variable', ui-sans-serif, system-ui, sans-serif;
+  pointer-events: none;
+}
+
+.hnav.is-past,
+.hnav.is-mega,
+.hnav.is-mobile {
+  --hnav-fg: var(--h-ink);
+  --hnav-mark-ink: #fff;
+}
+
+/* „Przejdź do treści” – pierwszy przystanek Tab, widoczny tylko z fokusem */
+.hnav__skip {
+  position: absolute;
+  top: 16px;
+  left: clamp(16px, 3vw, 32px);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: var(--h-pill);
+  background: var(--h-ink);
+  color: #fff;
+  font-size: 14.5px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  pointer-events: auto;
+  transform: translateY(calc(-100% - 24px));
+  transition: transform 0.3s var(--h-ease-out);
+}
+
+.hnav__skip:focus {
+  transform: none;
+}
+
+/* Pierścień fokusu elementów pływających nad filmem i treścią: biały z ciemną obwódką – widoczny na jasnym
+   i ciemnym tle (globalny kolor akcentu ginie na filmie). Pozycje w pigułce mają białe tło i zostają przy akcencie. */
+.hnav__skip:focus-visible,
+.hnav__logo:focus-visible,
+.hnav__burger:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px rgba(18, 14, 11, 0.6);
+}
+
+.hnav__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px clamp(16px, 3vw, 32px);
+  pointer-events: none;
+  animation: hnav-in 1s var(--h-ease-out) 0.15s both;
+}
+
+.hnav__bar > * {
+  pointer-events: auto;
+}
+
+@keyframes hnav-in {
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+}
+
+.hnav__logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 14px 5px 5px;
+  border-radius: var(--h-pill);
+  color: var(--hnav-fg);
+  text-decoration: none;
+  transition:
+    color 0.4s,
+    background-color 0.4s,
+    box-shadow 0.4s;
+}
+
+/* po zjechaniu z filmu logo dostaje własną jasną „pigułkę” – czytelne także na ciemnych sekcjach */
+.hnav.is-past .hnav__logo,
+.hnav.is-mega .hnav__logo,
+.hnav.is-mobile .hnav__logo {
+  background: var(--hnav-glass);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  box-shadow: var(--hnav-glass-shadow);
+}
+
+.hnav__mark {
+  width: 30px;
+  height: 30px;
+  color: var(--hnav-fg);
+  transition: color 0.4s;
+}
+
+/* nazwa firmy wersalikami (do czasu logo od właścicielki) – mniejszy stopień i lekko rozstrzelone litery */
+.hnav__word {
+  font-size: 18px;
+  font-weight: 680;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+/* Sama pigułka nie tworzy kontekstu warstw ani bloku zawierającego (tło jest na ::before), więc panel
+   konfiguratorów – w DOM tuż za swoim przyciskiem – nadal leży pod paskiem i ma szerokość całego ekranu. */
+.hnav__pill {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px;
+  border-radius: var(--h-pill);
+  color: var(--h-ink);
+}
+
+.hnav__pill::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--hnav-glass);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  box-shadow: var(--hnav-glass-shadow);
+}
+
+/* elementy pigułki są pozycjonowane, żeby rysowały się nad jej tłem (::before) */
+.hnav__pill > * {
+  position: relative;
+}
+
+.hnav__menu {
+  display: flex;
+}
+
+.hnav__item {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 6px;
+  height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: var(--h-pill);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 520;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.25s;
+}
+
+.hnav__item:hover,
+.hnav__item.is-active {
+  background: var(--h-bg-2);
+}
+
+.hnav__item--menu svg {
+  transition: transform 0.3s;
+}
+
+.hnav__item--menu.is-active svg {
+  transform: rotate(180deg);
+}
+
+.hnav__item--quiet {
+  color: var(--h-muted);
+}
+
+.hnav__sep {
+  width: 1px;
+  height: 22px;
+  background: var(--h-bg-3);
+  margin: 0 6px;
+}
+
+.hnav__icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: inherit;
+  transition: background-color 0.25s;
+}
+
+.hnav__icon:hover {
+  background: var(--h-bg-2);
+}
+
+.hnav__cta {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  height: 40px;
+  margin-left: 4px;
+  padding: 0 20px;
+  border-radius: var(--h-pill);
+  background: var(--h-ink);
+  color: #fff;
+  font-size: 14.5px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 0.3s;
+}
+
+/* biały tekst na --h-accent-2 (6.4:1); --h-accent miał tylko 4.4:1 */
+.hnav__cta:hover {
+  background: var(--h-accent-2);
+}
+
+.hnav__burger {
+  display: none;
+  width: 48px;
+  height: 48px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--hnav-glass);
+  box-shadow: 0 8px 24px rgba(29, 24, 20, 0.12);
+  cursor: pointer;
+  position: relative;
+}
+
+.hnav__burger span {
+  position: absolute;
+  left: 15px;
+  right: 15px;
+  height: 1.8px;
+  background: var(--h-ink);
+  border-radius: 2px;
+  transition: transform 0.35s var(--h-ease-out);
+}
+
+.hnav__burger span:first-child {
+  top: 19px;
+}
+
+.hnav__burger span:last-child {
+  top: 27px;
+}
+
+.hnav.is-mobile .hnav__burger span:first-child {
+  transform: translateY(4px) rotate(45deg);
+}
+
+.hnav.is-mobile .hnav__burger span:last-child {
+  transform: translateY(-4px) rotate(-45deg);
+}
+
+/* panel „Konfiguratory” – wewnątrz pigułki (fixed: liczony względem ekranu, nie pigułki), pod paskiem */
+.hnav__mega {
+  pointer-events: auto;
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: -1;
+  padding: 96px clamp(16px, 3vw, 32px) 36px;
+  background: rgba(244, 241, 236, 0.97); /* --h-bg, 97% */
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 24px 60px rgba(29, 24, 20, 0.16);
+  animation: hnav-mega 0.45s var(--h-ease-out);
+}
+
+.hnav__mega[hidden] {
+  display: none;
+}
+
+@keyframes hnav-mega {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}
+
+.hnav__mega-inner {
+  max-width: 1360px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 40px;
+  color: var(--h-ink);
+}
+
+.hnav__mega-title {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--h-muted);
+  margin-bottom: 16px;
+}
+
+.hnav__mega-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.hnav__card {
+  display: grid;
+  gap: 4px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.hnav__card-img {
+  display: block;
+  aspect-ratio: 16 / 10;
+  border-radius: var(--h-radius-sm);
+  background: var(--h-bg-3) center / cover no-repeat;
+  margin-bottom: 8px;
+  transition: transform 0.6s var(--h-ease-out);
+}
+
+.hnav__card:hover .hnav__card-img {
+  transform: scale(1.025);
+}
+
+.hnav__card-label {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.hnav__card-note {
+  font-size: 14px;
+  color: var(--h-muted);
+}
+
+.hnav__mega-aside {
+  align-self: stretch;
+  padding: 24px;
+  border-radius: var(--h-radius);
+  background: var(--h-dark);
+  color: var(--h-on-dark);
+}
+
+.hnav__mega-aside .hnav__mega-title {
+  color: var(--h-on-dark-muted);
+}
+
+.hnav__mega-aside p {
+  margin: 0 0 18px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: rgba(244, 239, 232, 0.86);
+}
+
+.hnav__mega-link {
+  color: var(--h-on-dark);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* menu mobilne: treść wyższa niż ekran (niski telefon, telefon w poziomie) przewija się w arkuszu */
+.hnav__sheet {
+  pointer-events: auto;
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 104px 24px max(32px, env(safe-area-inset-bottom));
+  background: var(--h-bg);
+  animation: hnav-mega 0.4s var(--h-ease-out);
+}
+
+.hnav__sheet[hidden] {
+  display: none;
+}
+
+.hnav__sheet-links {
+  display: grid;
+  gap: 6px;
+  flex: none;
+}
+
+.hnav__sheet-links a {
+  font-size: 30px;
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  color: var(--h-ink);
+  text-decoration: none;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--h-line);
+}
+
+/* na dole arkusza, gdy jest miejsce; gdy go brak – zaraz pod linkami (przewija się razem z nimi) */
+.hnav__sheet-cta {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  height: 56px;
+  margin-top: auto;
+  border-radius: var(--h-pill);
+  background: var(--h-ink);
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+@media (max-height: 640px) {
+  .hnav__sheet {
+    padding-top: 84px;
+  }
+  .hnav__sheet-links a {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 900px) {
+  .hnav__pill {
+    display: none;
+  }
+  .hnav__burger {
+    display: block;
+  }
+}
+
+/* zalogowany: pigułka z „Wyloguj” potrzebuje ok. 970 px – do 1040 px (zapas na font zastępczy) menu mobilne;
+   ten sam próg jest w HomeNav.jsx (WIDE_USER) */
+@media (max-width: 1040px) {
+  .hnav.has-user .hnav__pill {
+    display: none;
+  }
+  .hnav.has-user .hnav__burger {
+    display: block;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hnav__bar,
+  .hnav__mega,
+  .hnav__sheet {
+    animation: none;
+  }
+  .hnav__skip {
+    transition: none;
+  }
+}
+
+/* płynne przewijanie do kotwic (#kolory, #faq…) tylko na stronie głównej, z odstępem na pływające menu */
+html:has(.h-page) {
+  scroll-behavior: smooth;
+  scroll-padding-top: 88px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:has(.h-page) {
+    scroll-behavior: auto;
+  }
+}

@@ -1,0 +1,361 @@
+/* =============================================================================
+   DecorMarquee – próbnik dekorów: dwa rzędy kafelków w nieskończonym ruchu.
+   Prefiks klas: .h-marq-
+   ============================================================================= */
+
+.h-marq-section {
+  --h-marq-size: clamp(132px, 11vw, 168px);
+  --h-marq-gap: clamp(12px, 1.3vw, 18px);
+  --h-marq-fade: clamp(24px, 9vw, 168px);
+  position: relative;
+  background: var(--h-bg);
+  padding: var(--h-section-y) 0;
+}
+
+/* --- rzędy ------------------------------------------------------------------- */
+.h-marq-rows {
+  display: grid;
+  gap: 2px;
+  max-width: 2400px;
+  margin: 0 auto;
+}
+
+/* krawędzie wygaszone maską; pionowy padding = miejsce na uniesienie i cień kafelka */
+.h-marq-row {
+  position: relative;
+  overflow: hidden;
+  padding: 14px 0 20px;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 var(--h-marq-fade), #000 calc(100% - var(--h-marq-fade)), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 var(--h-marq-fade), #000 calc(100% - var(--h-marq-fade)), transparent 100%);
+  opacity: 0;
+  transform: translate3d(56px, 0, 0);
+  transition:
+    opacity 1s var(--h-ease-out),
+    transform 1.4s var(--h-ease-out);
+}
+
+/* wjazd zgodny z kierunkiem ruchu: rząd 1 z prawej, rząd 2 z lewej */
+.h-marq-row--reverse {
+  transform: translate3d(-56px, 0, 0);
+  transition-delay: 0.12s;
+}
+
+.h-marq-rows.is-in .h-marq-row {
+  opacity: 1;
+  transform: none;
+}
+
+.h-marq-track {
+  display: flex;
+  width: max-content;
+  animation: h-marq-scroll var(--h-marq-dur, 60s) linear infinite;
+  will-change: transform;
+}
+
+.h-marq-row--reverse .h-marq-track {
+  animation-direction: reverse;
+}
+
+.h-marq-row:hover .h-marq-track,
+.h-marq-section[data-paused] .h-marq-track,
+.h-marq-section[data-offscreen] .h-marq-track {
+  animation-play-state: paused;
+}
+
+@keyframes h-marq-scroll {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+/* połówka taśmy; padding z prawej = odstęp między kopiami, więc -50% wypada dokładnie na szwie */
+.h-marq-half {
+  display: flex;
+  flex: none;
+  gap: var(--h-marq-gap);
+  margin: 0;
+  padding: 0 var(--h-marq-gap) 0 0;
+  list-style: none;
+}
+
+/* --- kafelek ------------------------------------------------------------------ */
+.h-marq-tile {
+  flex: none;
+  width: var(--h-marq-size);
+}
+
+.h-marq-media {
+  position: relative;
+  display: block;
+  isolation: isolate;
+  transition: transform 0.7s var(--h-ease-out);
+}
+
+/* cień „uniesionej próbki” – pojawia się przez opacity (bez animowania box-shadow) */
+.h-marq-media::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 12% 8% -4%;
+  border-radius: var(--h-radius);
+  box-shadow: 0 18px 34px -12px rgba(29, 24, 20, 0.42);
+  opacity: 0;
+  transition: opacity 0.6s var(--h-ease-out);
+}
+
+.h-marq-swatch {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: var(--h-radius);
+  background-color: var(--h-marq-hex, var(--h-bg-3));
+}
+
+/* połysk i cienka krawędź – próbka wygląda jak płytka, jasne dekory nie zlewają się z tłem */
+.h-marq-swatch::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0) 38%,
+    rgba(29, 24, 20, 0) 64%,
+    rgba(29, 24, 20, 0.08) 100%
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(29, 24, 20, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  pointer-events: none;
+}
+
+/* miniatura tekstury wchodzi na kolor hex płynnie (fill-mode backwards → po animacji działa hover) */
+.h-marq-img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  animation: h-marq-appear 0.9s var(--h-ease-out) backwards;
+  transition: transform 0.8s var(--h-ease-out);
+}
+
+@keyframes h-marq-appear {
+  from {
+    opacity: 0;
+    transform: scale(1.08);
+  }
+}
+
+.h-marq-label {
+  margin: 12px 0 0;
+  padding-right: 4px;
+  font-size: 14px;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--h-ink);
+}
+
+.h-marq-name {
+  font-weight: 500;
+}
+
+.h-marq-sep,
+.h-marq-code {
+  color: var(--h-muted);
+}
+
+.h-marq-code {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .h-marq-tile:hover .h-marq-media {
+    transform: translate3d(0, -6px, 0) scale(1.04);
+  }
+
+  .h-marq-tile:hover .h-marq-media::before {
+    opacity: 1;
+  }
+
+  .h-marq-tile:hover .h-marq-img {
+    transform: scale(1.06);
+  }
+}
+
+/* --- legenda i pauza ------------------------------------------------------------ */
+.h-marq-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 24px;
+  margin-top: clamp(16px, 2.4vw, 28px);
+  opacity: 0;
+  transition: opacity 0.9s var(--h-ease-out) 0.35s;
+}
+
+.h-marq-foot.is-in {
+  opacity: 1;
+}
+
+.h-marq-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+  color: var(--h-ink-2);
+}
+
+.h-marq-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.h-marq-legend-dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(29, 24, 20, 0.14);
+}
+
+.h-marq-legend-count {
+  color: var(--h-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.h-marq-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 16px 0 14px;
+  border: 1px solid rgba(29, 24, 20, 0.2);
+  border-radius: var(--h-pill);
+  background: transparent;
+  color: var(--h-ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 560;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  transition:
+    background-color 0.3s var(--h-ease),
+    border-color 0.3s var(--h-ease),
+    color 0.3s var(--h-ease),
+    transform 0.35s var(--h-ease-out);
+}
+
+.h-marq-toggle:hover {
+  background: var(--h-ink);
+  border-color: var(--h-ink);
+  color: var(--h-surface);
+}
+
+.h-marq-toggle:active {
+  transform: scale(0.97);
+}
+
+.h-marq-toggle svg {
+  flex: none;
+  display: block;
+}
+
+/* --- telefon ------------------------------------------------------------------- */
+@media (max-width: 599.98px) {
+  .h-marq-label {
+    margin-top: 10px;
+    font-size: 13px;
+  }
+
+  .h-marq-code {
+    font-size: 12px;
+  }
+
+  .h-marq-legend {
+    gap: 6px 16px;
+    font-size: 13px;
+  }
+}
+
+/* --- ograniczony ruch: bez animacji, rzędy przewijane ręcznie ---------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .h-marq-section {
+    --h-marq-fade: 20px;
+  }
+
+  .h-marq-row {
+    opacity: 1;
+    transform: none;
+    transition: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scroll-padding-inline: var(--h-gutter);
+    scrollbar-width: none;
+  }
+
+  .h-marq-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  .h-marq-section .h-marq-row:focus-visible {
+    outline-offset: -3px;
+  }
+
+  .h-marq-track {
+    animation: none;
+    will-change: auto;
+  }
+
+  .h-marq-half {
+    padding: 0 var(--h-gutter);
+  }
+
+  .h-marq-half--clone {
+    display: none;
+  }
+
+  .h-marq-tile {
+    scroll-snap-align: start;
+  }
+
+  .h-marq-img {
+    animation: none;
+    transition: none;
+  }
+
+  .h-marq-media,
+  .h-marq-media::before,
+  .h-marq-toggle {
+    transition: none;
+  }
+
+  .h-marq-tile:hover .h-marq-media,
+  .h-marq-tile:hover .h-marq-img {
+    transform: none;
+  }
+
+  .h-marq-foot {
+    opacity: 1;
+    transition: none;
+  }
+}

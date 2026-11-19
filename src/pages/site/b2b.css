@@ -1,0 +1,702 @@
+/* =============================================================================
+   Usługi B2B (/uslugi-b2b) – karta faktów w nagłówku, siatka usług, ciemny pas „szerszy zakres”,
+   lista „Jak zlecić usługę?” i blok kontaktu. Prefiks: .s-b2b-
+   Wyłącznie tokeny z home.css (odcienie pochodne przez color-mix). Zdjęć warsztatu jeszcze nie ma –
+   stronę niosą typografia, karty i ikony liniowe.
+   ============================================================================= */
+
+/* nazwa firmy nie łamie się w środku („HAR / MEBLE”) */
+.s-b2b-nowrap {
+  white-space: nowrap;
+}
+
+/* --- nagłówek: przyciski i karta faktów ------------------------------------------------ */
+@media (max-width: 559px) {
+  /* telefon: przyciski jeden pod drugim, na całą szerokość (jak w sekcji kontaktu strony głównej) */
+  .s-b2b-head-btn {
+    flex: 1 1 100%;
+  }
+}
+
+.s-b2b-aside {
+  padding: clamp(22px, 2.6vw, 34px);
+  border: 1px solid var(--h-line);
+  border-radius: var(--h-radius-lg);
+  background: var(--h-surface);
+  box-shadow: var(--h-shadow);
+}
+
+.s-b2b-aside__lead {
+  margin: 0;
+  font-size: clamp(1.08rem, 1.4vw, 1.25rem);
+  line-height: 1.5;
+  letter-spacing: -0.015em;
+  color: var(--h-ink-2);
+  text-wrap: pretty;
+}
+
+.s-b2b-aside__lead strong {
+  font-weight: 600;
+  color: var(--h-ink);
+}
+
+.s-b2b-aside__facts {
+  display: grid;
+  margin: clamp(20px, 2.2vw, 28px) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.s-b2b-aside__fact {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  column-gap: 14px;
+  align-items: start;
+  padding: 14px 0;
+  border-top: 1px solid var(--h-line);
+  font-size: 0.97rem;
+  line-height: 1.45;
+  color: var(--h-ink);
+}
+
+.s-b2b-aside__fact:last-child {
+  padding-bottom: 0;
+}
+
+.s-b2b-aside__icon {
+  display: block;
+  margin-top: -1px; /* środek ikony na wysokości pierwszej linii tekstu */
+  color: var(--h-accent);
+}
+
+.s-b2b-aside__sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.875rem;
+  color: var(--h-muted);
+}
+
+/* link w zdaniu: podkreślenie zawsze widoczne; większy obszar dotyku bez zmiany wysokości wiersza */
+.s-b2b-aside__link {
+  display: inline-block;
+  padding: 10px 0;
+  margin: -10px 0;
+  font-weight: 600;
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+  overflow-wrap: anywhere;
+  transition: text-decoration-color 0.3s var(--h-ease);
+}
+
+.s-b2b-aside__link:hover {
+  text-decoration-color: currentColor;
+}
+
+/* --- zakres usług --------------------------------------------------------------------- */
+/* sekcja tuż pod nagłówkiem strony – mniejszy odstęp u góry; u dołu zaraz wchodzi ciemny pas */
+.h-section.s-b2b-services {
+  padding-top: clamp(24px, 4vw, 56px);
+  padding-bottom: clamp(48px, 6vw, 96px);
+}
+
+/* siatka bez „sierot”: karta „Cięcie” jest szeroka (pełny rząd przy 2 kolumnach, połowa przy 4),
+   więc 7 kart układa się w 1 + 3 × 2 albo 3 + 4 */
+.s-b2b-services__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(12px, 1.4vw, 16px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 640px) {
+  .s-b2b-services__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .s-b2b-svc--wide {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 1200px) {
+  .s-b2b-services__grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .s-b2b-svc--wide {
+    grid-column: span 2;
+  }
+}
+
+/* wjazd kart (.h-reveal z home.css): każda karta ma własny observer, a opóźnienie zależy od kolumny –
+   rząd wjeżdża falą od lewej niezależnie od tego, jak głęboko na stronie leży */
+@media (min-width: 640px) and (max-width: 1199.98px) {
+  .s-b2b-svc:nth-child(2n + 3) {
+    --reveal-delay: 90ms;
+  }
+}
+
+@media (min-width: 1200px) {
+  .s-b2b-svc:nth-child(5) {
+    --reveal-delay: 90ms;
+  }
+
+  .s-b2b-svc:nth-child(2),
+  .s-b2b-svc:nth-child(6) {
+    --reveal-delay: 180ms;
+  }
+
+  .s-b2b-svc:nth-child(3),
+  .s-b2b-svc:nth-child(7) {
+    --reveal-delay: 270ms;
+  }
+}
+
+/* --- karta usługi --------------------------------------------------------------------- */
+.s-b2b-svc {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: clamp(22px, 2vw, 30px);
+  border: 1px solid var(--h-line);
+  border-radius: var(--h-radius);
+  background: var(--h-surface);
+}
+
+/* treść wypełnia kartę do dołu – link „Zapytaj o tę usługę” zawsze na jej dole */
+.s-b2b-svc__main {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.s-b2b-svc__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.s-b2b-svc__icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--h-radius-sm);
+  background: var(--h-bg);
+  color: var(--h-accent-2);
+  transition:
+    background-color 0.4s var(--h-ease),
+    color 0.4s var(--h-ease);
+}
+
+.s-b2b-svc__icon svg {
+  display: block;
+}
+
+/* najechanie albo fokus na „Zapytaj o tę usługę” podświetla ikonę karty */
+.s-b2b-svc:has(.s-b2b-svc__link:hover, .s-b2b-svc__link:focus-visible) .s-b2b-svc__icon {
+  background: var(--h-accent-soft);
+}
+
+.s-b2b-svc__num {
+  padding-top: 4px;
+  font-size: 13px;
+  font-weight: 560;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+  color: var(--h-muted);
+}
+
+.s-b2b-svc__title {
+  margin: clamp(26px, 3vw, 44px) 0 0;
+  font-size: clamp(1.2rem, 1.55vw, 1.4rem);
+  font-weight: 560;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--h-ink);
+  text-wrap: balance;
+}
+
+/* „– struganie drewna” – dopowiedzenie w tytule */
+.s-b2b-svc__suffix {
+  font-weight: 480;
+  color: var(--h-muted);
+}
+
+.s-b2b-svc__text {
+  max-width: 60ch;
+  margin: 10px 0 clamp(20px, 2.2vw, 28px);
+  font-size: 0.98rem;
+  line-height: 1.6;
+  color: var(--h-ink-2);
+  text-wrap: pretty;
+}
+
+/* link przyklejony do dołu karty – w rzędzie wszystkie linki stoją na jednej linii */
+.s-b2b-svc__link {
+  align-self: flex-start;
+  margin-top: auto;
+  font-size: 0.95rem;
+}
+
+/* obszar dotyku ≥ 44 px wokół tekstu linku (::after to podkreślenie z .h-link) */
+.s-b2b-svc__link::before {
+  content: '';
+  position: absolute;
+  inset: -12px -10px;
+}
+
+.s-b2b-svc__link:hover .h-btn__arrow {
+  transform: translateX(4px);
+}
+
+/* --- szeroka karta „Cięcie” z planem rozkroju ------------------------------------------- */
+.s-b2b-plan {
+  display: none;
+}
+
+/* ikona i numer na całą szerokość karty (numer w jej rogu), pod nimi treść | plan */
+@media (min-width: 640px) {
+  .s-b2b-svc--wide {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      'top top'
+      'main plan';
+    column-gap: clamp(24px, 3vw, 48px);
+  }
+
+  .s-b2b-svc--wide .s-b2b-svc__top {
+    grid-area: top;
+  }
+
+  .s-b2b-svc--wide .s-b2b-svc__main {
+    grid-area: main;
+  }
+
+  /* górny margines jak nad tytułem – plan jest wyśrodkowany względem treści, a nie razem z odstępem */
+  .s-b2b-plan {
+    grid-area: plan;
+    align-self: center;
+    justify-self: center;
+    display: block;
+    width: 100%;
+    max-width: 380px;
+    margin-top: clamp(26px, 3vw, 44px);
+  }
+}
+
+.s-b2b-plan__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 284 / 210;
+  overflow: visible;
+}
+
+.s-b2b-plan__board {
+  fill: var(--h-bg-2);
+  stroke: var(--h-line);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+/* formatki wskakują po kolei, gdy karta wjedzie w widok (opóźnienie liczone od wjazdu karty) */
+.s-b2b-plan__part {
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  opacity: 0;
+  transform: scale(0.9);
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    opacity 0.6s var(--h-ease-out),
+    transform 0.9s var(--h-ease-out);
+  transition-delay: calc(var(--reveal-delay, 0ms) + 260ms + var(--i, 0) * 60ms);
+}
+
+.s-b2b-svc.is-in .s-b2b-plan__part {
+  opacity: 1;
+  transform: none;
+}
+
+.s-b2b-plan__part--piece {
+  fill: var(--h-surface);
+  stroke: color-mix(in srgb, var(--h-ink) 26%, transparent);
+}
+
+.s-b2b-plan__part--accent {
+  fill: var(--h-accent-soft);
+  stroke: var(--h-accent);
+}
+
+/* odpad: wypełnienie kreskowaniem ustawia atrybut fill (wzór w SVG) – tu tylko obrys */
+.s-b2b-plan__part--offcut {
+  stroke: var(--h-line);
+}
+
+.s-b2b-plan__hatch {
+  stroke: var(--h-line);
+  stroke-width: 1.5;
+}
+
+/* --- pas „Potrzebujesz szerszego zakresu prac?” ------------------------------------------- */
+/* pod pasem zaczyna się beżowa sekcja – mniejszy odstęp niż pełne --h-section-y, żeby pas nie „wisiał” */
+.s-b2b-band {
+  padding-bottom: clamp(56px, 7vw, 104px);
+}
+
+.s-b2b-band__card {
+  --band-grid: color-mix(in srgb, var(--h-on-dark) 9%, transparent);
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  gap: clamp(20px, 3vw, 40px);
+  padding: clamp(28px, 6vw, 88px);
+  overflow: hidden;
+  border-radius: var(--h-radius-lg);
+  /* poświata akcentu w prawym górnym rogu – jak karta kontaktu strony głównej, z dala od tekstu na desktopie */
+  background:
+    radial-gradient(85% 110% at 100% 0%, color-mix(in srgb, var(--h-accent) 24%, transparent) 0%, transparent 60%),
+    radial-gradient(70% 90% at 0% 100%, var(--h-dark-2) 0%, transparent 72%),
+    var(--h-dark);
+  color: var(--h-on-dark);
+}
+
+/* siatka „papieru technicznego” wygaszana ku krawędziom – nawiązanie do dokumentacji i list formatek */
+.s-b2b-band__card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(to right, var(--band-grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--band-grid) 1px, transparent 1px);
+  background-size: 32px 32px;
+  background-position: -1px -1px;
+  -webkit-mask-image: radial-gradient(75% 95% at 80% 35%, #000 0%, transparent 78%);
+  mask-image: radial-gradient(75% 95% at 80% 35%, #000 0%, transparent 78%);
+  pointer-events: none;
+}
+
+@media (min-width: 900px) {
+  .s-b2b-band__card {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    column-gap: clamp(40px, 6vw, 112px);
+    align-items: end;
+  }
+}
+
+/* dwie klasy: rozmiar wygrywa z .h-title niezależnie od kolejności wczytania plików CSS.
+   Od 900 px „Potrzebujesz szerszego” mieści się w lewej kolumnie w jednej linii (dwie linie tytułu). */
+.s-b2b-band .s-b2b-band__title {
+  font-size: clamp(1.9rem, 3.4vw, 3rem);
+  color: var(--h-on-dark);
+}
+
+.s-b2b-band__title .h-lines__inner {
+  text-wrap: balance;
+}
+
+.s-b2b-band .s-b2b-band__lead {
+  max-width: 44ch;
+  color: var(--h-on-dark-muted);
+}
+
+.s-b2b-band__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: clamp(22px, 2.6vw, 32px);
+}
+
+@media (max-width: 559px) {
+  .s-b2b-band__actions .h-btn {
+    flex: 1 1 100%;
+  }
+}
+
+/* fokus: jasny obrys zamiast akcentu (na ciemnym tle akcent jest za słaby) */
+.h-page .s-b2b-band :focus-visible {
+  outline-color: var(--h-on-dark);
+}
+
+/* --- jak zlecić usługę ------------------------------------------------------------------ */
+.s-b2b-how__grid {
+  display: grid;
+  gap: clamp(32px, 5vw, 56px);
+}
+
+@media (min-width: 960px) {
+  .s-b2b-how__grid {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    column-gap: clamp(48px, 7vw, 128px);
+    align-items: start;
+  }
+
+  /* tytuł zostaje na miejscu, gdy przewijamy listę (jak w FAQ strony głównej) */
+  .s-b2b-how__intro {
+    position: sticky;
+    top: clamp(96px, 14vh, 136px);
+  }
+}
+
+.s-b2b-how__intro .h-head {
+  margin-bottom: 0;
+}
+
+.s-b2b-how__label {
+  margin: 0 0 clamp(12px, 1.4vw, 18px);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--h-ink);
+}
+
+.s-b2b-how__list {
+  --how-line: color-mix(in srgb, var(--h-ink) 14%, transparent);
+  position: relative;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.s-b2b-how__item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  column-gap: 16px;
+  align-items: baseline;
+  padding: clamp(16px, 1.8vw, 22px) 0;
+}
+
+/* cienkie linie między pozycjami – rysują się od lewej przy wejściu listy w widok */
+.s-b2b-how__item::before,
+.s-b2b-how__list::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--how-line);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 1.2s var(--h-ease-out) calc(var(--i, 0) * 60ms);
+}
+
+.s-b2b-how__item::before {
+  top: 0;
+}
+
+.s-b2b-how__list::after {
+  bottom: 0;
+  transition-delay: calc(var(--n, 8) * 60ms);
+}
+
+.s-b2b-how__list.is-in .s-b2b-how__item::before,
+.s-b2b-how__list.is-in::after {
+  transform: none;
+}
+
+.s-b2b-how__item > * {
+  opacity: 0;
+  transform: translate3d(0, 14px, 0);
+  transition:
+    opacity 0.8s var(--h-ease-out) calc(var(--i, 0) * 60ms + 100ms),
+    transform 1s var(--h-ease-out) calc(var(--i, 0) * 60ms + 100ms);
+}
+
+.s-b2b-how__list.is-in .s-b2b-how__item > * {
+  opacity: 1;
+  transform: none;
+}
+
+.s-b2b-how__num {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--h-accent-2); /* ≥ 5:1 na --h-bg-2 */
+}
+
+.s-b2b-how__text {
+  font-size: clamp(1.02rem, 1.3vw, 1.18rem);
+  font-weight: 500;
+  line-height: 1.45;
+  letter-spacing: -0.015em;
+  color: var(--h-ink);
+  text-wrap: pretty;
+}
+
+.s-b2b-how__cond {
+  font-weight: 650;
+}
+
+.s-b2b-how__note {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  column-gap: 14px;
+  align-items: start;
+  margin-top: clamp(24px, 3vw, 36px);
+  padding: clamp(18px, 2.2vw, 26px);
+  border-radius: var(--h-radius);
+  background: var(--h-surface);
+}
+
+.s-b2b-how__note-icon {
+  display: block;
+  color: var(--h-accent);
+}
+
+.s-b2b-how__note-text {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--h-ink);
+  text-wrap: pretty;
+}
+
+@media (max-width: 479px) {
+  .s-b2b-how__item {
+    grid-template-columns: 32px minmax(0, 1fr);
+    column-gap: 12px;
+  }
+}
+
+/* --- kontakt B2B ---------------------------------------------------------------------- */
+.s-b2b-contact__card {
+  display: grid;
+  gap: clamp(28px, 4vw, 48px);
+  padding: clamp(24px, 6vw, 80px);
+  border-radius: var(--h-radius-lg);
+  background: var(--h-accent-soft);
+}
+
+.s-b2b-contact__title {
+  max-width: 18ch;
+}
+
+.s-b2b-contact__address {
+  margin: 0;
+  font-style: normal;
+}
+
+.s-b2b-contact__list {
+  display: grid;
+  margin: 0;
+}
+
+@media (min-width: 800px) {
+  .s-b2b-contact__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: clamp(32px, 5vw, 80px);
+  }
+}
+
+/* każda pozycja to kontener – duży adres e-mail skaluje się do szerokości swojej kolumny (cqi) */
+.s-b2b-contact__item {
+  container-type: inline-size;
+  min-width: 0;
+  padding: clamp(18px, 2vw, 26px) 0;
+  border-top: 1px solid color-mix(in srgb, var(--h-ink) 16%, transparent);
+}
+
+.s-b2b-contact__label {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--h-ink-2);
+}
+
+.s-b2b-contact__value {
+  margin: 10px 0 0;
+}
+
+/* duże linki: e-mail ma ~11 em szerokości, więc 8cqi mieści go w kolumnie (przeglądarki bez jednostek
+   kontenera biorą pierwszą deklarację z vw); w ostateczności łamie się przed „@” */
+.s-b2b-contact__big {
+  display: inline-block;
+  padding: 8px 0;
+  margin: -8px 0;
+  font-size: clamp(1.25rem, 5.4vw, 2.5rem);
+  font-size: clamp(1.25rem, 8cqi, 2.75rem);
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+  text-decoration-color: color-mix(in srgb, currentColor 30%, transparent);
+  overflow-wrap: anywhere;
+  transition: text-decoration-color 0.3s var(--h-ease);
+}
+
+.s-b2b-contact__big:hover {
+  text-decoration-color: currentColor;
+}
+
+.s-b2b-contact__big--phone {
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
+.s-b2b-contact__note {
+  margin: 12px 0 0;
+  font-size: 0.95rem;
+  color: var(--h-ink-2);
+}
+
+.s-b2b-contact__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+@media (max-width: 559px) {
+  .s-b2b-contact__actions .h-btn {
+    flex: 1 1 100%;
+  }
+}
+
+/* --- dostępność --------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .s-b2b-plan__part,
+  .s-b2b-how__item::before,
+  .s-b2b-how__list::after,
+  .s-b2b-how__item > * {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .s-b2b-svc__icon,
+  .s-b2b-svc__link .h-btn__arrow,
+  .s-b2b-aside__link,
+  .s-b2b-contact__big {
+    transition: none;
+  }
+
+  .s-b2b-svc__link:hover .h-btn__arrow {
+    transform: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .s-b2b-band__card::before {
+    display: none;
+  }
+
+  .s-b2b-band__card,
+  .s-b2b-contact__card,
+  .s-b2b-how__note {
+    border: 1px solid CanvasText;
+  }
+}

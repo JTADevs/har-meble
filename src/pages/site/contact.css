@@ -1,0 +1,672 @@
+/* =============================================================================
+   Kontakt (/kontakt) – karta-wizytówka w nagłówku, kafelki telefonu i e-maili, siedziba i oddział
+   (słoje drewna wokół pinezki jako dekoracja), dane do faktury, ciemna karta „Zapytaj o wycenę”.
+   Prefiks: .s-contact-   Wyłącznie tokeny z home.css (.h-page).
+   ============================================================================= */
+
+/* kotwice (#lokalizacje, #dane-do-faktury…) nie chowają się pod pływającą nawigacją */
+.s-contact-channels,
+.s-contact-places,
+.s-contact-invoice,
+.s-contact-quote {
+  scroll-margin-top: 88px;
+}
+
+.s-contact-icon,
+.s-contact-sicon {
+  display: block;
+  flex: none;
+}
+
+/* podkreślenie rysowane przy hover/fokusie – tłem, a nie ::after, więc działa też na adresie złamanym na dwie linie */
+.s-contact-u {
+  background: linear-gradient(currentColor, currentColor) 0 100% / 0 1.5px no-repeat;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  transition: background-size 0.5s var(--h-ease-out);
+}
+
+a:hover > .s-contact-u,
+a:focus-visible > .s-contact-u {
+  background-size: 100% 1.5px;
+}
+
+/* --- nagłówek: przyciski i karta-wizytówka ---------------------------------------------------- */
+@media (max-width: 559px) {
+  .s-contact-head-btn {
+    flex: 1 1 100%;
+  }
+}
+
+.s-contact-card {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(24px, 2.4vw, 34px) clamp(24px, 2.4vw, 34px) clamp(14px, 1.4vw, 20px) clamp(28px, 2.8vw, 38px);
+  border: 1px solid var(--h-line);
+  border-radius: var(--h-radius-lg);
+  background: var(--h-surface);
+  box-shadow: var(--h-shadow);
+}
+
+/* pasek akcentu wzdłuż lewej krawędzi – jak obrzeże okleiny na płycie */
+.s-contact-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 4px;
+  background: var(--h-accent);
+}
+
+.s-contact-card__brand {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--h-ink);
+}
+
+.s-contact-card__claim {
+  margin: 6px 0 0;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  color: var(--h-muted);
+}
+
+.s-contact-card__address {
+  margin: clamp(18px, 2vw, 26px) 0 0;
+  font-style: normal;
+}
+
+.s-contact-card__list {
+  margin: 0;
+}
+
+.s-contact-card__row {
+  display: grid;
+  gap: 2px;
+  padding: 12px 0;
+  border-top: 1px solid var(--h-line);
+}
+
+.s-contact-card__label {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--h-muted);
+}
+
+.s-contact-card__value {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  color: var(--h-ink);
+  overflow-wrap: anywhere;
+}
+
+/* inline-block z odstępem: cel dotyku ≥ 44 px, a podkreślenie zostaje pod tekstem */
+.s-contact-card__link {
+  position: relative;
+  display: inline-block;
+  padding: 10px 0;
+  text-decoration: none;
+}
+
+/* --- (a) kafelki: telefon i e-maile ---------------------------------------------------------- */
+/* sekcja stoi tuż pod nagłówkiem (to samo tło) – odstęp od góry daje już nagłówek */
+.h-section.s-contact-channels {
+  padding-top: 0;
+}
+
+.s-contact-tiles {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* telefon: ikona obok etykiety, wartość na całą szerokość */
+.s-contact-tile {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    'icon label'
+    'value value'
+    'note note'
+    'copy copy';
+  column-gap: 14px;
+  align-items: center;
+  padding: 20px;
+  border: 1px solid var(--h-line);
+  border-radius: var(--h-radius);
+  background: var(--h-surface);
+}
+
+/* od 720 px: trzy kolumny, ikona nad treścią, przyciski „Kopiuj” w jednej linii u dołu kafelków */
+@media (min-width: 720px) {
+  .s-contact-tiles {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(12px, 1.6vw, 20px);
+  }
+
+  .s-contact-tile {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto 1fr auto;
+    grid-template-areas: 'icon' 'label' 'value' 'note' 'copy';
+    align-items: start;
+    padding: clamp(22px, 2.6vw, 36px);
+  }
+}
+
+.s-contact-tile__icon {
+  grid-area: icon;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--h-accent-soft);
+  color: var(--h-accent-2);
+}
+
+@media (min-width: 720px) {
+  .s-contact-tile__icon {
+    width: 52px;
+    height: 52px;
+    margin-bottom: clamp(28px, 3.4vw, 48px);
+  }
+}
+
+.s-contact-tile__label {
+  grid-area: label;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--h-muted);
+}
+
+.s-contact-tile__value {
+  grid-area: value;
+  justify-self: start;
+  position: relative;
+  display: inline-block;
+  margin-top: 6px;
+  padding: 10px 0;
+  font-size: clamp(1.3rem, 1.1rem + 0.8vw, 1.65rem);
+  font-weight: 520;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  color: var(--h-ink);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+/* numer telefonu nie łamie się między grupami cyfr */
+.s-contact-tile__value[href^='tel:'] {
+  white-space: nowrap;
+}
+
+.s-contact-tile__note {
+  grid-area: note;
+  margin: 2px 0 0;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--h-muted);
+  text-wrap: pretty;
+}
+
+.s-contact-tile__copy {
+  grid-area: copy;
+  margin-top: 18px;
+}
+
+@media (min-width: 720px) {
+  .s-contact-tile__copy {
+    margin-top: clamp(20px, 2.4vw, 32px);
+  }
+}
+
+/* --- przycisk „Kopiuj…” z komunikatem ------------------------------------------------------- */
+.s-contact-copy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+
+.h-btn.s-contact-copy__btn {
+  min-height: 44px;
+  gap: 8px;
+}
+
+.s-contact-copy__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 560;
+  line-height: 1.4;
+  color: var(--h-accent-2);
+}
+
+.s-contact-copy__status.is-ok,
+.s-contact-copy__status.is-error {
+  animation: s-contact-pop 0.45s var(--h-ease-out);
+}
+
+.s-contact-copy__status.is-error {
+  flex-basis: 100%;
+  font-weight: 500;
+  color: var(--h-ink);
+}
+
+@keyframes s-contact-pop {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 4px, 0);
+  }
+}
+
+/* --- (b) siedziba i oddział -------------------------------------------------------------------- */
+.s-contact-places__head {
+  margin-bottom: clamp(32px, 4.4vw, 64px);
+}
+
+.s-contact-places__title .h-lines__inner {
+  text-wrap: balance;
+}
+
+.s-contact-places__list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 720px) {
+  .s-contact-places__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(12px, 1.6vw, 20px);
+  }
+}
+
+/* region (order: -1) u góry odpycha resztę treści do dołu karty; słoje w prawym górnym rogu */
+.s-contact-place {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-height: clamp(300px, 30vw, 400px);
+  padding: clamp(24px, 3.2vw, 44px);
+  border-radius: var(--h-radius-lg);
+  background: var(--h-surface);
+}
+
+.s-contact-place__rings {
+  position: absolute;
+  z-index: -1;
+  top: clamp(-90px, -6vw, -56px);
+  right: clamp(-90px, -6vw, -56px);
+  width: clamp(230px, 26vw, 340px);
+  height: auto;
+}
+
+.s-contact-place__region {
+  order: -1;
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  margin: 0 0 auto;
+  padding: 0 14px;
+  border-radius: var(--h-pill);
+  background: var(--h-accent-soft);
+  color: var(--h-accent-2);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.s-contact-place__title {
+  margin: clamp(48px, 7vw, 96px) 0 0;
+  font-size: clamp(1.5rem, 2.4vw, 2.15rem);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.s-contact-place__address {
+  margin: 14px 0 0;
+  font-style: normal;
+  font-size: clamp(1.05rem, 1.2vw, 1.15rem);
+  line-height: 1.55;
+  color: var(--h-ink-2);
+}
+
+.h-btn.s-contact-place__map {
+  min-height: 44px;
+  margin-top: clamp(20px, 2.4vw, 28px);
+  gap: 8px;
+}
+
+.s-contact-place__map .s-contact-sicon {
+  transition: transform 0.4s var(--h-ease-out);
+}
+
+.s-contact-place__map:hover .s-contact-sicon {
+  transform: translate(2px, -2px);
+}
+
+/* uwaga o wizycie – przerywana ramka jak linia cięcia na płycie */
+.s-contact-visit {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px 16px;
+  margin-top: 12px;
+  padding: 16px clamp(16px, 2.4vw, 28px);
+  border: 1px dashed color-mix(in srgb, var(--h-ink) 24%, transparent);
+  border-radius: var(--h-radius);
+}
+
+@media (min-width: 720px) {
+  .s-contact-visit {
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    margin-top: clamp(12px, 1.6vw, 20px);
+  }
+}
+
+.s-contact-visit__icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--h-surface);
+  color: var(--h-accent-2);
+}
+
+.s-contact-visit__text {
+  margin: 0;
+  font-size: clamp(1rem, 1.1vw, 1.0625rem);
+  line-height: 1.5;
+  color: var(--h-ink);
+  text-wrap: pretty;
+}
+
+.s-contact-visit__link {
+  grid-column: 2;
+  justify-self: start;
+  white-space: nowrap;
+}
+
+@media (min-width: 720px) {
+  .s-contact-visit__link {
+    grid-column: 3;
+    margin-right: 8px;
+  }
+}
+
+/* większy obszar dotyku bez zmiany układu (.h-link ma position: relative; ::after rysuje podkreślenie) */
+.s-contact-visit__link::before {
+  content: '';
+  position: absolute;
+  inset: -12px -10px;
+}
+
+.s-contact-visit__link:hover .h-btn__arrow {
+  transform: translateX(4px);
+}
+
+/* --- słoje drewna (dekoracja kart) ------------------------------------------------------------ */
+.s-contact-rings {
+  display: block;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.s-contact-rings path {
+  fill: none;
+  stroke: color-mix(in srgb, var(--h-ink) 14%, transparent);
+  stroke-width: 0.9;
+}
+
+.s-contact-rings__halo {
+  fill: var(--h-accent-soft);
+}
+
+.s-contact-rings__dot {
+  fill: var(--h-accent);
+}
+
+/* słoje rysują się od środka na zewnątrz, gdy karta wejdzie w widok (klasa is-in z Reveal / useInView) */
+@media (prefers-reduced-motion: no-preference) {
+  .s-contact-rings path {
+    stroke-dasharray: 1 1;
+    stroke-dashoffset: 1;
+    transition: stroke-dashoffset 2s var(--h-ease-out) calc(var(--ring-i, 0) * 90ms + 150ms);
+  }
+
+  .is-in .s-contact-rings path {
+    stroke-dashoffset: 0;
+  }
+
+  .s-contact-rings__halo,
+  .s-contact-rings__dot {
+    transform: scale(0);
+    transform-box: fill-box;
+    transform-origin: center;
+    transition: transform 0.9s var(--h-ease-out) 0.1s;
+  }
+
+  .is-in .s-contact-rings__halo,
+  .is-in .s-contact-rings__dot {
+    transform: none;
+  }
+}
+
+/* lekki obrót słojów wokół pinezki przy najechaniu na kartę (tylko mysz) */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .s-contact-place__rings {
+    transition: transform 1.6s var(--h-ease-out);
+  }
+
+  .s-contact-place:hover .s-contact-place__rings {
+    transform: rotate(-8deg);
+  }
+}
+
+/* --- (d) dane do faktury ----------------------------------------------------------------------- */
+/* dalej, na tym samym tle, stoi karta wyceny – mniejszy odstęp u dołu */
+.h-section.s-contact-invoice {
+  padding-bottom: clamp(16px, 3vw, 40px);
+}
+
+.s-contact-invoice__card {
+  display: grid;
+  grid-template-areas: 'intro' 'data' 'copy';
+  gap: 24px;
+  padding: clamp(24px, 3.6vw, 52px);
+  border: 1px solid var(--h-line);
+  border-radius: var(--h-radius-lg);
+  background: var(--h-surface);
+}
+
+/* od 800 px: tytuł i przycisk po lewej, dane po prawej (kolejność w DOM: tytuł → dane → przycisk) */
+@media (min-width: 800px) {
+  .s-contact-invoice__card {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      'intro data'
+      'copy data';
+    column-gap: clamp(32px, 6vw, 112px);
+    row-gap: 28px;
+  }
+}
+
+.s-contact-invoice__intro {
+  grid-area: intro;
+}
+
+.s-contact-invoice__hint {
+  margin: 12px 0 0;
+  max-width: 34ch;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--h-muted);
+}
+
+.s-contact-invoice__data {
+  grid-area: data;
+  padding-top: 22px;
+  border-top: 1px dashed color-mix(in srgb, var(--h-ink) 22%, transparent);
+}
+
+@media (min-width: 800px) {
+  .s-contact-invoice__data {
+    align-self: center;
+    padding: 4px 0 4px clamp(28px, 4vw, 56px);
+    border-top: 0;
+    border-left: 1px dashed color-mix(in srgb, var(--h-ink) 22%, transparent);
+  }
+}
+
+.s-contact-invoice__name {
+  margin: 0;
+  font-size: clamp(1.3rem, 2vw, 1.75rem);
+  font-weight: 520;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  color: var(--h-ink);
+}
+
+.s-contact-invoice__address,
+.s-contact-invoice__nip {
+  margin: 10px 0 0;
+  font-style: normal;
+  font-size: clamp(1.02rem, 1.2vw, 1.125rem);
+  line-height: 1.55;
+  color: var(--h-ink-2);
+}
+
+.s-contact-invoice__num {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.s-contact-invoice__copy {
+  grid-area: copy;
+  align-self: end;
+}
+
+/* --- (c) karta „Zapytaj o wycenę” ----------------------------------------------------------------- */
+.h-section.s-contact-quote {
+  padding-top: clamp(16px, 3vw, 40px);
+}
+
+.s-contact-quote__card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: clamp(28px, 7vw, 96px);
+  border-radius: var(--h-radius-lg);
+  background:
+    radial-gradient(85% 110% at 100% 0%, color-mix(in srgb, var(--h-accent) 24%, transparent) 0%, transparent 60%),
+    radial-gradient(70% 90% at 0% 100%, var(--h-dark-2) 0%, transparent 72%),
+    var(--h-dark);
+  color: var(--h-on-dark);
+}
+
+.s-contact-quote__rings {
+  position: absolute;
+  z-index: -1;
+  top: clamp(-160px, -9vw, -70px);
+  right: clamp(-160px, -9vw, -70px);
+  width: clamp(280px, 38vw, 560px);
+  height: auto;
+}
+
+.s-contact-quote__card .s-contact-rings path {
+  stroke: color-mix(in srgb, var(--h-on-dark) 13%, transparent);
+}
+
+.s-contact-quote__card .s-contact-quote__eyebrow {
+  margin: 0;
+  color: var(--h-on-dark-muted);
+}
+
+.s-contact-quote__card .s-contact-quote__title {
+  margin-top: clamp(18px, 2vw, 28px);
+  font-size: clamp(2.5rem, 5.6vw, 5.25rem);
+  color: var(--h-on-dark);
+}
+
+.s-contact-quote__title .h-lines__inner {
+  text-wrap: balance;
+}
+
+.s-contact-quote__body {
+  display: grid;
+  gap: clamp(28px, 4vw, 44px);
+  margin-top: clamp(32px, 4.6vw, 64px);
+  padding-top: clamp(28px, 3.4vw, 48px);
+  border-top: 1px solid color-mix(in srgb, var(--h-on-dark) 14%, transparent);
+}
+
+@media (min-width: 1024px) {
+  .s-contact-quote__body {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    column-gap: clamp(48px, 6vw, 112px);
+  }
+}
+
+.s-contact-quote__card .s-contact-quote__lead {
+  max-width: 54ch;
+  color: var(--h-on-dark-muted);
+}
+
+.s-contact-quote__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+@media (max-width: 559px) {
+  .s-contact-quote__actions .h-btn {
+    flex: 1 1 100%;
+  }
+}
+
+/* na ciemnej karcie jasny pierścień fokusu (akcent ma tu za mały kontrast) */
+.s-contact-quote .s-contact-quote__card :focus-visible {
+  outline-color: var(--h-on-dark);
+}
+
+/* --- ograniczony ruch ------------------------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  .s-contact-u,
+  .s-contact-place__map .s-contact-sicon {
+    transition: none;
+  }
+
+  .s-contact-copy__status.is-ok,
+  .s-contact-copy__status.is-error {
+    animation: none;
+  }
+}

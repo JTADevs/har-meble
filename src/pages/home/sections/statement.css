@@ -1,0 +1,242 @@
+/* =============================================================================
+   Statement – zdanie-manifest odsłaniane słowo po słowie + pigułki kategorii.
+   Prefiks klas: .h-stmt-
+   ============================================================================= */
+
+.h-stmt-section {
+  position: relative;
+  background: var(--h-bg-2);
+  padding: var(--h-section-y) 0;
+  text-align: center;
+}
+
+.h-stmt-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* eyebrow z kropką akcentu */
+.h-stmt-inner .h-stmt-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 clamp(22px, 2.8vw, 36px);
+}
+
+.h-stmt-eyebrow::before {
+  content: '';
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--h-accent);
+}
+
+/* --- manifest --------------------------------------------------------------- */
+.h-stmt-title {
+  position: relative;
+  max-width: 18ch;
+  margin: 0;
+  font-size: clamp(2.2rem, 4.8vw, 4.2rem);
+  font-weight: 500;
+  line-height: 1.07;
+  letter-spacing: -0.04em;
+  color: var(--h-ink);
+  text-wrap: balance;
+}
+
+.h-stmt-text,
+.h-stmt-lead,
+.h-stmt-punch {
+  display: block;
+}
+
+.h-stmt-punch {
+  margin-top: 0.14em;
+  color: var(--h-accent);
+}
+
+/* krycie ustawiane z JS (inline) wg postępu przewijania; krótkie przejście wygładza skoki kółka myszy */
+.h-stmt-word {
+  opacity: 0.16;
+  transition: opacity 0.24s var(--h-ease);
+}
+
+/* niewidoczny punkt pomiarowy w połowie wysokości nagłówka (wysokość 0 → postęp liczony od środka) */
+.h-stmt-probe {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 1px;
+  height: 0;
+  pointer-events: none;
+}
+
+/* --- pigułki ---------------------------------------------------------------- */
+.h-stmt-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(20px, 2.2vw, 28px);
+  width: 100%;
+  margin-top: clamp(40px, 5.5vw, 76px);
+}
+
+.h-stmt-pills {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  max-width: 1000px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.h-stmt-pill-item {
+  display: flex;
+  opacity: 0;
+  transform: translate3d(0, 22px, 0) scale(0.96);
+  transition:
+    opacity 0.7s var(--h-ease-out),
+    transform 0.95s var(--h-ease-out);
+  transition-delay: calc(var(--i, 0) * 60ms + 80ms);
+}
+
+.h-stmt-cta.is-in .h-stmt-pill-item {
+  opacity: 1;
+  transform: none;
+}
+
+/* fokus z klawiatury zawsze widoczny, nawet zanim pigułki wjadą */
+.h-stmt-cta .h-stmt-pill-item:focus-within {
+  opacity: 1;
+  transform: none;
+  transition-delay: 0ms;
+}
+
+.h-stmt-pills .h-stmt-pill {
+  position: relative;
+  gap: 10px;
+}
+
+/* znacznik „3D” – pigułki prowadzące do konfiguratora */
+.h-stmt-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 20px;
+  padding: 0 6px;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  transition:
+    background-color 0.3s var(--h-ease),
+    border-color 0.3s var(--h-ease),
+    color 0.3s var(--h-ease);
+}
+
+/* --h-accent-2: drobny tekst na bieli ma kontrast ≥ 4.5:1 (--h-accent daje tylko ~4.4:1) */
+.h-stmt-pill:hover .h-stmt-badge,
+.h-stmt-pill:focus-visible .h-stmt-badge {
+  background: var(--h-surface);
+  border-color: var(--h-surface);
+  color: var(--h-accent-2);
+}
+
+/* wariant jasny (obrysowany) – „Wszystkie meble” */
+.h-page a.h-pill-link.h-stmt-pill--ghost {
+  background: transparent;
+  color: var(--h-ink);
+  box-shadow: inset 0 0 0 1px rgba(29, 24, 20, 0.28);
+  transition:
+    transform 0.35s var(--h-ease-out),
+    background-color 0.3s var(--h-ease),
+    color 0.3s var(--h-ease),
+    box-shadow 0.3s var(--h-ease);
+}
+
+.h-page a.h-pill-link.h-stmt-pill--ghost:hover {
+  background: var(--h-ink);
+  color: var(--h-surface);
+  box-shadow: inset 0 0 0 1px var(--h-ink);
+}
+
+.h-stmt-pill--ghost:hover .h-btn__arrow {
+  transform: translateX(4px);
+}
+
+/* legenda pod pigułkami */
+.h-stmt-note {
+  max-width: 52ch;
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--h-ink-2);
+  opacity: 0;
+  transform: translate3d(0, 10px, 0);
+  transition:
+    opacity 0.7s var(--h-ease-out) 0.62s,
+    transform 0.9s var(--h-ease-out) 0.62s;
+}
+
+.h-stmt-cta.is-in .h-stmt-note {
+  opacity: 1;
+  transform: none;
+}
+
+.h-stmt-note .h-stmt-badge--note {
+  height: 19px;
+  margin-right: 6px;
+  vertical-align: 1px;
+  border-color: rgba(29, 24, 20, 0.22);
+  color: var(--h-ink-2);
+}
+
+/* --- telefon ------------------------------------------------------------------ */
+@media (max-width: 599.98px) {
+  .h-stmt-pills {
+    gap: 8px;
+  }
+
+  .h-stmt-pills .h-pill-link {
+    min-height: 44px;
+    padding: 0 18px;
+    font-size: 13px;
+  }
+
+  .h-stmt-pills .h-stmt-pill {
+    gap: 8px;
+  }
+
+  .h-stmt-badge {
+    height: 18px;
+    padding: 0 5px;
+    font-size: 9px;
+  }
+}
+
+/* --- ograniczony ruch: całe zdanie od razu, pigułki bez wjazdu ------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .h-stmt-word {
+    opacity: 1 !important;
+    transition: none;
+  }
+
+  .h-stmt-pill-item,
+  .h-stmt-note {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .h-stmt-badge,
+  .h-page a.h-pill-link.h-stmt-pill--ghost {
+    transition: none;
+  }
+}

@@ -1,0 +1,256 @@
+/* =============================================================================
+   Polityka prywatności (/polityka-prywatnosci) – spis treści (przyklejony na desktopie) i treść w kolumnie .s-prose.
+   Prefiks: .s-privacy-   Wyłącznie tokeny z home.css (.h-page).
+   ============================================================================= */
+
+/* data wejścia w życie pod leadem nagłówka */
+.s-privacy-date {
+  display: block;
+  margin-top: 14px;
+  font-size: 0.9375rem;
+  color: var(--h-muted);
+}
+
+.s-privacy-nowrap {
+  white-space: nowrap;
+}
+
+/* treść zaczyna się tuż pod nagłówkiem (to samo tło) */
+.h-section.s-privacy {
+  padding-top: clamp(8px, 2vw, 24px);
+}
+
+.s-privacy-grid {
+  display: grid;
+  gap: clamp(32px, 5vw, 56px);
+}
+
+/* desktop: spis treści po lewej przykleja się pod nawigacją; przy niskim oknie przewija się sam
+   (odstęp wewnątrz – pierścień fokusu linków nie jest obcinany przez overflow) */
+@media (min-width: 1024px) {
+  .s-privacy-grid {
+    grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
+    column-gap: clamp(48px, 7vw, 120px);
+    align-items: start;
+  }
+
+  .s-privacy-side {
+    position: sticky;
+    top: 108px;
+    max-height: calc(100vh - 128px);
+    margin: -6px;
+    padding: 6px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+/* --- spis treści -------------------------------------------------------------------------------- */
+.s-privacy-toc {
+  padding: clamp(20px, 3vw, 28px);
+  border: 1px solid var(--h-line);
+  border-radius: var(--h-radius);
+  background: var(--h-surface);
+}
+
+@media (min-width: 1024px) {
+  .s-privacy-toc {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+  }
+}
+
+.s-privacy-toc__title {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--h-muted);
+}
+
+.s-privacy-toc__list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: s-privacy-toc;
+}
+
+/* tablet: dwie kolumny czytane z góry na dół (1–6 | 7–11) */
+@media (min-width: 640px) and (max-width: 1023.98px) {
+  .s-privacy-toc__list {
+    grid-auto-flow: column;
+    grid-template-rows: repeat(6, auto);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 28px;
+  }
+}
+
+.s-privacy-toc__item {
+  counter-increment: s-privacy-toc;
+  border-top: 1px solid var(--h-line);
+}
+
+/* (.s-privacy-toc przed klasą linku – wygrywa z .h-page a { color: inherit }) */
+.s-privacy-toc .s-privacy-toc__link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 8px 0;
+  color: var(--h-ink-2);
+  font-size: 0.9375rem;
+  line-height: 1.35;
+  text-decoration: none;
+  transition: color 0.3s var(--h-ease);
+}
+
+/* numer jak w nagłówkach rozdziałów („1.”) – czytniki odczytują go razem z nazwą */
+.s-privacy-toc__link::before {
+  content: counter(s-privacy-toc) '.';
+  flex: none;
+  min-width: 2.4ch;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--h-muted);
+  transition: color 0.3s var(--h-ease);
+}
+
+.s-privacy-toc .s-privacy-toc__link:hover,
+.s-privacy-toc .s-privacy-toc__link[aria-current='true'] {
+  color: var(--h-ink);
+}
+
+.s-privacy-toc .s-privacy-toc__link[aria-current='true'] {
+  font-weight: 560;
+}
+
+.s-privacy-toc__link:hover::before,
+.s-privacy-toc__link[aria-current='true']::before {
+  color: var(--h-accent-2);
+}
+
+/* --- treść ------------------------------------------------------------------------------------------ */
+/* kotwice ze spisu treści nie chowają się pod pływającą nawigacją */
+.s-privacy-section {
+  scroll-margin-top: 104px;
+}
+
+.s-prose.s-privacy-prose h2 {
+  margin-top: 2.4em;
+  text-wrap: balance;
+}
+
+.s-prose.s-privacy-prose .s-privacy-section:first-of-type h2 {
+  margin-top: 0;
+}
+
+.s-prose.s-privacy-prose p {
+  margin: 0 0 1em;
+}
+
+.s-prose.s-privacy-prose ul {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 1.1em;
+  padding: 0;
+  list-style: none;
+}
+
+.s-prose.s-privacy-prose ul > li {
+  position: relative;
+  padding-left: 24px;
+}
+
+/* krótka kreska w kolorze akcentu zamiast kropki */
+.s-prose.s-privacy-prose ul > li::before {
+  content: '';
+  position: absolute;
+  top: 0.8em;
+  left: 2px;
+  width: 10px;
+  height: 1.5px;
+  border-radius: 1px;
+  background: var(--h-accent);
+}
+
+.s-prose.s-privacy-prose strong {
+  font-weight: 600;
+  color: var(--h-ink);
+}
+
+/* linki w tekście zawsze podkreślone (nie tylko kolorem) */
+.s-prose.s-privacy-prose a {
+  color: var(--h-ink);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, var(--h-ink) 40%, transparent);
+  overflow-wrap: anywhere;
+  transition:
+    color 0.3s var(--h-ease),
+    text-decoration-color 0.3s var(--h-ease);
+}
+
+.s-prose.s-privacy-prose a:hover {
+  color: var(--h-accent-2);
+  text-decoration-color: currentColor;
+}
+
+/* cele i podstawy prawne: od 720 px dwie kolumny (cel | podstawa) */
+.s-privacy-basis {
+  margin: 0 0 1.2em;
+  border-top: 1px solid var(--h-line);
+}
+
+.s-privacy-basis__row {
+  display: grid;
+  gap: 4px 28px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--h-line);
+}
+
+@media (min-width: 720px) {
+  .s-privacy-basis__row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  }
+}
+
+.s-privacy-basis dt {
+  font-weight: 560;
+  line-height: 1.45;
+  color: var(--h-ink);
+}
+
+.s-privacy-basis dd {
+  margin: 0;
+  line-height: 1.55;
+  color: var(--h-ink-2);
+}
+
+/* uwaga tylko w trybie deweloperskim (import.meta.env.DEV) */
+.s-prose .s-privacy-dev {
+  display: inline-flex;
+  margin: 0 0 clamp(28px, 4vw, 40px);
+  padding: 10px 16px;
+  border: 1px dashed var(--h-accent);
+  border-radius: var(--h-radius-sm);
+  background: var(--h-accent-soft);
+  color: var(--h-accent-2);
+  font-size: 0.875rem;
+  font-weight: 560;
+  line-height: 1.45;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .s-privacy-toc .s-privacy-toc__link,
+  .s-privacy-toc__link::before,
+  .s-prose.s-privacy-prose a {
+    transition: none;
+  }
+}

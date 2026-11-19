@@ -1,0 +1,157 @@
+/* =============================================================================
+   Inspiracje – jasna sekcja z karuzelą poziomych kart (16:10). Prefiks .h-insp-
+   ============================================================================= */
+
+.h-insp-card {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: clamp(16px, 1.6vw, 22px);
+  width: clamp(300px, 44vw, 640px);
+}
+
+/* --- zdjęcie ----------------------------------------------------------------------- */
+.h-insp-card__media {
+  position: relative;
+  isolation: isolate; /* poprawne przycinanie zoomu z zaokrągleniem (Safari) */
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-radius: var(--h-radius-lg);
+  background: var(--h-bg-3);
+}
+
+.h-insp .h-insp-card__frame {
+  width: 100%;
+  height: 100%;
+  transition: transform 1.2s var(--h-ease-out);
+}
+
+.h-insp-card__tag {
+  position: absolute;
+  top: clamp(14px, 1.5vw, 20px);
+  left: clamp(14px, 1.5vw, 20px);
+  padding: 7px 12px;
+  border-radius: var(--h-pill);
+  background: rgba(255, 255, 255, 0.86);
+  -webkit-backdrop-filter: blur(10px) saturate(1.3);
+  backdrop-filter: blur(10px) saturate(1.3);
+  color: var(--h-ink);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+
+/* --- opis pod zdjęciem ------------------------------------------------------------- */
+.h-insp-card__body {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+  padding: 0 2px;
+}
+
+.h-insp-card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+}
+
+.h-insp-card__title {
+  margin: 0;
+  font-size: clamp(1.25rem, 1.6vw, 1.5rem);
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+}
+
+/* próbki materiałów zestawu (front, blat, okucia) – zachodzące na siebie kółka */
+.h-insp-card__swatches {
+  display: inline-flex;
+  flex: none;
+  padding-left: 6px;
+}
+
+.h-insp-card__swatch {
+  width: 18px;
+  height: 18px;
+  margin-left: -6px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0) 58%),
+    var(--h-insp-sw);
+  box-shadow:
+    0 0 0 2px var(--h-insp-ring, var(--h-bg)),
+    inset 0 0 0 1px rgba(29, 24, 20, 0.14);
+}
+
+/* obwódka próbek w kolorze tła sekcji (sekcja ma tło --h-bg-2 przez .h-section--alt) */
+.h-section--alt .h-insp-card__swatch {
+  --h-insp-ring: var(--h-bg-2);
+}
+
+.h-insp-card__materials {
+  margin: 0;
+  max-width: 52ch;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--h-ink-2);
+  text-wrap: pretty;
+}
+
+.h-insp-card__cta {
+  margin-top: 8px;
+  font-size: 0.9375rem;
+  text-decoration: none;
+}
+
+/* rozciągnięty link – kliknięcie w zdjęcie lub opis otwiera konfigurator */
+.h-insp-card__cta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* --- hover / fokus ------------------------------------------------------------------- */
+@media (hover: hover) and (pointer: fine) {
+  .h-insp-card:hover .h-insp-card__frame {
+    transform: scale(1.04);
+  }
+
+  .h-insp-card:hover .h-link::after {
+    transform: scaleX(1);
+  }
+
+  .h-insp-card:hover .h-btn__arrow {
+    transform: translateX(4px);
+  }
+}
+
+/* obwódka fokusu wokół zdjęcia + pełne podkreślenie linku */
+@supports selector(:has(*)) {
+  .h-insp .h-insp-card__cta:focus-visible {
+    outline: none;
+  }
+
+  .h-insp-card:has(.h-insp-card__cta:focus-visible) .h-insp-card__media {
+    outline: 2px solid var(--h-accent);
+    outline-offset: 4px;
+  }
+
+  .h-insp-card:has(.h-insp-card__cta:focus-visible) .h-link::after {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .h-insp .h-insp-card__frame,
+  .h-insp-card .h-btn__arrow {
+    transition: none;
+  }
+
+  .h-insp-card:hover .h-insp-card__frame {
+    transform: none;
+  }
+}

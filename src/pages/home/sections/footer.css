@@ -1,0 +1,246 @@
+/* =============================================================================
+   Stopka – manifest, kolumny linków, kontakt, pasek prawny i ogromny wordmark. Prefiks: .h-foot-
+   ============================================================================= */
+
+.h-foot-root {
+  --foot-line: color-mix(in srgb, var(--h-on-dark) 14%, transparent);
+  --foot-text: color-mix(in srgb, var(--h-on-dark) 84%, transparent);
+  position: relative;
+  padding: clamp(64px, 8vw, 120px) 0 clamp(8px, 1.2vw, 16px);
+  border-radius: var(--h-radius-lg) var(--h-radius-lg) 0 0;
+  background: var(--h-dark);
+  color: var(--h-on-dark);
+}
+
+/* --- manifest + krótki opis ----------------------------------------------------------- */
+.h-foot-top {
+  display: grid;
+  gap: clamp(24px, 3vw, 40px);
+  padding-bottom: clamp(48px, 6vw, 96px);
+}
+
+@media (min-width: 900px) {
+  .h-foot-top {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    column-gap: clamp(40px, 6vw, 112px);
+  }
+}
+
+.h-foot-claim {
+  margin: 0;
+  font-size: clamp(2.25rem, 5.4vw, 4.75rem);
+  font-weight: 500;
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+  color: var(--h-on-dark);
+}
+
+.h-foot-intro {
+  margin: 0;
+  max-width: 36ch;
+  font-size: clamp(1rem, 1.2vw, 1.0625rem);
+  line-height: 1.6;
+  color: var(--h-on-dark-muted);
+}
+
+/* --- kolumny linków + kontakt ---------------------------------------------------------- */
+.h-foot-grid {
+  display: grid;
+  gap: 44px 32px;
+  padding: clamp(40px, 4.6vw, 64px) 0;
+  border-top: 1px solid var(--foot-line);
+}
+
+.h-foot-nav {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 40px 24px;
+}
+
+@media (min-width: 640px) {
+  .h-foot-nav {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 960px) {
+  .h-foot-grid {
+    grid-template-columns: minmax(0, 3fr) minmax(240px, 1.2fr);
+    column-gap: clamp(32px, 4vw, 64px);
+  }
+}
+
+.h-foot-heading {
+  margin: 0 0 18px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--h-on-dark-muted);
+}
+
+.h-foot-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.h-foot-list,
+.h-foot-address {
+  font-size: 1rem;
+  line-height: 1.45;
+  color: var(--foot-text);
+}
+
+.h-foot-address {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  font-style: normal;
+}
+
+/* link: jaśnieje, a podkreślenie wjeżdża od lewej i wyjeżdża w prawo */
+.h-foot-link {
+  position: relative;
+  display: inline-block;
+  padding: 2px 0;
+  text-decoration: none;
+  transition: color 0.3s var(--h-ease);
+}
+
+.h-foot-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right center;
+  transition: transform 0.55s var(--h-ease-out);
+}
+
+.h-foot-link:hover,
+.h-foot-link:focus-visible {
+  color: var(--h-on-dark);
+}
+
+.h-foot-link:hover::after,
+.h-foot-link:focus-visible::after {
+  transform: scaleX(1);
+  transform-origin: left center;
+}
+
+/* --- pasek prawny -------------------------------------------------------------------------- */
+.h-foot-legal {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 32px;
+  padding: 22px 0;
+  border-top: 1px solid var(--foot-line);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--h-on-dark-muted);
+}
+
+.h-foot-copy,
+.h-foot-demo {
+  margin: 0;
+}
+
+.h-foot-demo-label {
+  font-weight: 560;
+  color: var(--foot-text);
+}
+
+/* --- wordmark ------------------------------------------------------------------------------ */
+.h-foot-brand {
+  container-type: inline-size;
+  margin-top: clamp(8px, 2vw, 28px);
+}
+
+/* Słowo wypełnia szerokość kontenera: font-size = szerokość kontenera / szerokość słowa w em.
+   4.94 ≈ „HAR MEBLE” w Inter Tight 650 (szerokości liter − 9 × 0.06em odstępu + mały zapas).
+   Dokładny współczynnik mierzy Footer.jsx (--foot-fit). Pierwsza deklaracja – zapas bez container queries. */
+.h-foot-mark {
+  font-size: min(19vw, 272px);
+  font-size: calc(100cqi / var(--foot-fit, 4.94));
+  font-weight: 650;
+  line-height: 0.8;
+  letter-spacing: 0;
+  color: var(--h-on-dark);
+  /* maska: litery wjeżdżają spod dolnej krawędzi; u góry miejsce na kropkę nad „i” i uniesienie przy hover */
+  overflow: hidden;
+  padding: 0.1em 0.06em 0;
+  margin: 0 -0.06em;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.h-foot-word {
+  display: block;
+  width: max-content;
+  /* optyczne wyrównanie: lewa krawędź „H” równo z krawędzią kontenera */
+  margin-left: -0.055em;
+  white-space: nowrap;
+}
+
+/* odstęp liter -0.06em jako ujemny margines – działa tak samo we wszystkich przeglądarkach
+   (letter-spacing na pojedynczych literach bywa różnie przycinany na końcu linii) */
+.h-foot-char {
+  display: inline-block;
+  margin-right: -0.06em;
+  transform: translate3d(0, 115%, 0);
+  transition: transform 1.25s var(--h-ease-out) calc(var(--foot-i, 0) * 60ms);
+}
+
+.h-foot-mark.is-in .h-foot-char {
+  transform: none;
+}
+
+.h-foot-mark.is-settled .h-foot-char {
+  transition: transform 0.6s var(--h-ease-out);
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .h-foot-mark.is-settled .h-foot-char:hover {
+    transform: translate3d(0, -7%, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .h-foot-char {
+    transform: none;
+    transition: none;
+  }
+
+  .h-foot-link,
+  .h-foot-link::after {
+    transition: none;
+  }
+}
+
+/* znacznik przy adresie dla firm */
+.h-foot-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border: 1px solid var(--foot-line);
+  border-radius: var(--h-pill);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  vertical-align: 2px;
+}
+
+/* NIP i podobne ciągi z myślnikami – bez łamania w środku */
+.h-foot-nowrap {
+  white-space: nowrap;
+}

@@ -1,0 +1,412 @@
+/* Hero: film na pełny ekran, nagłówek w lewym dolnym rogu, paski ujęć i pauza w prawym dolnym. */
+.h-hero {
+  position: relative;
+  height: 100vh;
+  height: 100svh;
+  min-height: 620px;
+  max-height: 1200px;
+  overflow: hidden;
+  color: #fff;
+  isolation: isolate;
+  /* „plakat” zanim wczyta się film – kolory pierwszego ujęcia */
+  background:
+    radial-gradient(120% 80% at 70% 30%, #efe8de 0%, #d9cdbd 55%, #b8a892 100%);
+}
+
+/* plakat = pierwsza klatka filmu; widoczny od razu i zostaje, gdy filmu nie ma (oszczędzanie danych, błąd) */
+.h-hero__poster {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* film pojawia się samym przenikaniem krycia – plakat pod spodem to ta sama pierwsza klatka, więc nie ma skoku */
+.h-hero__media {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 0.8s var(--h-ease-out);
+}
+
+.h-hero.is-ready .h-hero__media {
+  opacity: 1;
+}
+
+.h-hero__video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Przyciemnienie kadru: u góry pod nawigację, u dołu pod paski ujęć i pauzę (etykiety ujęć ≥ 4,5:1).
+   Tekst hero ma własne tło (.h-hero__copy::before) – reszta filmu zostaje jasna. */
+.h-hero__shade {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(18, 14, 11, 0.32) 0%, rgba(18, 14, 11, 0) 16%),
+    linear-gradient(0deg, rgba(18, 14, 11, 0.66) 0, rgba(18, 14, 11, 0.58) 100px, rgba(18, 14, 11, 0.24) 190px, rgba(18, 14, 11, 0) 290px);
+}
+
+.h-hero__content {
+  position: absolute;
+  inset: auto 0 clamp(96px, 13vh, 150px) 0;
+  z-index: 3;
+}
+
+.h-hero__content .h-container {
+  max-width: var(--h-max);
+}
+
+/* Blok tekstu z własnym przyciemnieniem, dopasowanym do rzeczywistego układu tekstu na każdym ekranie.
+   Krycie 0,6 pod całym blokiem (rgba(18,14,11)): biały tekst ≥ 5,7:1 (eyebrow, tytuł, przycisk obrysowy),
+   lead ≥ 5,2:1 – także na najjaśniejszym kadrze filmu (#eee8de) i na plakacie. Brzeg w górę i w prawo
+   wtapia się w film. */
+.h-hero__copy {
+  --scrim-top: 96px;
+  --scrim-side: 200px;
+  position: relative;
+  isolation: isolate;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.h-hero__copy::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: calc(-1 * var(--scrim-top));
+  right: calc(-1 * var(--scrim-side));
+  bottom: -240px; /* do dolnej krawędzi hero */
+  left: -100vw; /* do lewej krawędzi – także na bardzo szerokim ekranie */
+  background: linear-gradient(
+    90deg,
+    rgba(18, 14, 11, 0.6) calc(100% - var(--scrim-side)),
+    rgba(18, 14, 11, 0.4) calc(100% - var(--scrim-side) * 0.62),
+    rgba(18, 14, 11, 0.14) calc(100% - var(--scrim-side) * 0.28),
+    rgba(18, 14, 11, 0) 100%
+  );
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, rgba(0, 0, 0, 0.35) calc(var(--scrim-top) * 0.45), rgba(0, 0, 0, 0.8) calc(var(--scrim-top) * 0.8), #000 var(--scrim-top));
+  mask-image: linear-gradient(180deg, transparent 0, rgba(0, 0, 0, 0.35) calc(var(--scrim-top) * 0.45), rgba(0, 0, 0, 0.8) calc(var(--scrim-top) * 0.8), #000 var(--scrim-top));
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.9s var(--h-ease-out);
+}
+
+.h-hero.is-intro .h-hero__copy::before {
+  opacity: 1;
+}
+
+.h-hero__eyebrow,
+.h-hero__lead,
+.h-hero__actions,
+.h-hero__controls,
+.h-hero__scroll {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 1s var(--h-ease-out),
+    transform 1.2s var(--h-ease-out);
+}
+
+.h-hero.is-intro .h-hero__eyebrow {
+  opacity: 1;
+  transform: none;
+  transition-delay: 0.12s;
+}
+
+.h-hero.is-intro .h-hero__lead {
+  opacity: 0.94;
+  transform: none;
+  transition-delay: 0.62s;
+}
+
+.h-hero.is-intro .h-hero__actions {
+  opacity: 1;
+  transform: none;
+  transition-delay: 0.78s;
+}
+
+.h-hero.is-intro .h-hero__controls,
+.h-hero.is-intro .h-hero__scroll {
+  opacity: 1;
+  transform: none;
+  transition-delay: 1.05s;
+}
+
+.h-hero__eyebrow {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin-bottom: 18px;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.25);
+}
+
+.h-hero__title {
+  font-size: clamp(2.5rem, 5.8vw, 5.4rem);
+  font-weight: 500;
+  line-height: 1.02;
+  letter-spacing: -0.042em;
+  margin: 0;
+  max-width: 14ch;
+  text-shadow: 0 2px 28px rgba(0, 0, 0, 0.18);
+}
+
+.h-hero__lead {
+  max-width: 46ch;
+  margin: 22px 0 0;
+  font-size: clamp(1rem, 1.25vw, 1.15rem);
+  line-height: 1.55;
+  text-shadow: 0 1px 14px rgba(0, 0, 0, 0.3);
+}
+
+.h-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+/* Fokus w hero dwukolorowy: biały pierścień przy elemencie + ciemny obrys na zewnątrz –
+   widoczny i na jasnym kadrze filmu, i na przyciemnieniu pod tekstem. */
+.h-page .h-hero :focus-visible {
+  outline: 2px solid var(--h-ink);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 3px #fff;
+}
+
+/* paski ujęć + pauza */
+.h-hero__controls {
+  position: absolute;
+  right: var(--h-gutter);
+  bottom: clamp(28px, 4.5vh, 44px);
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.h-hero__shots {
+  display: flex;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.h-hero__shot {
+  display: grid;
+  gap: 8px;
+  padding: 6px 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: #fff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.h-hero__shot-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.94;
+  transition: opacity 0.3s;
+}
+
+.h-hero__shot:hover .h-hero__shot-label,
+.h-hero__shot[aria-current='true'] .h-hero__shot-label {
+  opacity: 1;
+}
+
+.h-hero__shot-track {
+  position: relative;
+  display: block;
+  width: 64px;
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.32);
+  overflow: hidden;
+}
+
+.h-hero__shot-fill {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+.h-hero__pause {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.3s var(--h-ease-out);
+}
+
+.h-hero__pause:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.h-hero__pause:active {
+  transform: scale(0.94);
+}
+
+/* wskazówka przewijania */
+.h-hero__scroll {
+  position: absolute;
+  left: 50%;
+  bottom: 26px;
+  z-index: 4;
+  width: 24px;
+  height: 38px;
+  margin-left: -12px;
+  border: 1.5px solid rgba(255, 255, 255, 0.7);
+  border-radius: 14px;
+}
+
+.h-hero__scroll span {
+  position: absolute;
+  left: 50%;
+  top: 8px;
+  width: 3px;
+  height: 7px;
+  margin-left: -1.5px;
+  border-radius: 2px;
+  background: #fff;
+  animation: h-hero-wheel 1.8s var(--h-ease-in-out) 1.2s 2; /* 2 cykle (< 5 s) – bez ruchu bez końca obok filmu (WCAG 2.2.2) */
+}
+
+@keyframes h-hero-wheel {
+  0% {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  30% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(9px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@media (max-width: 900px) {
+  .h-hero__scroll {
+    display: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .h-hero__content {
+    bottom: 92px;
+  }
+  .h-hero__copy {
+    --scrim-top: 56px;
+  }
+  /* zwarty blok tekstu – na ekranie pionowym nad nim zostaje pas na mebel z filmu */
+  .h-hero__eyebrow {
+    font-size: 11px;
+    margin-bottom: 12px;
+  }
+  .h-hero__title {
+    max-width: none;
+    font-size: clamp(2.05rem, 9.2vw, 2.6rem);
+    line-height: 1.04;
+  }
+  .h-hero__lead {
+    margin-top: 14px;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .h-hero__actions {
+    gap: 10px;
+    margin-top: 20px;
+  }
+  .h-hero__actions .h-btn {
+    flex: 1 1 auto;
+    min-height: 46px;
+  }
+  .h-hero__controls {
+    left: var(--h-gutter);
+    right: var(--h-gutter);
+    justify-content: space-between;
+  }
+  .h-hero__shots {
+    flex: 1;
+    gap: 8px;
+  }
+  .h-hero__shots li {
+    flex: 1;
+  }
+  /* cel dotyku min. 44 px wysokości (tor wizualnie zostaje 2 px) */
+  .h-hero__shot {
+    width: 100%;
+    min-height: 44px;
+    align-content: center;
+  }
+  .h-hero__shot-label {
+    display: none;
+  }
+  .h-hero__shot-track {
+    background: rgba(255, 255, 255, 0.4); /* etykiety ukryte – sam tor musi być widoczny (≥ 3:1) */
+    width: 100%;
+  }
+}
+
+/* typowy telefon: oba przyciski w jednym rzędzie (węższe ekrany i tak zawiną je do dwóch) */
+@media (max-width: 420px) {
+  .h-hero__actions .h-btn {
+    padding: 0 16px;
+    font-size: 14px;
+  }
+  .h-hero__actions .h-btn__arrow {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .h-hero__media,
+  .h-hero__eyebrow,
+  .h-hero__lead,
+  .h-hero__actions,
+  .h-hero__controls,
+  .h-hero__scroll {
+    transition: none;
+    transform: none;
+  }
+  .h-hero__copy::before {
+    transition: none;
+  }
+  .h-hero__scroll span {
+    animation: none;
+  }
+}
+
+.h-hero__controls[hidden] {
+  display: none;
+}
