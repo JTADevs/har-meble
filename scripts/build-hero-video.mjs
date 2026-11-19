@@ -16,10 +16,16 @@ import path from 'node:path';
 
 const XF = 0.8; // długość przenikania między ujęciami (s)
 // jakość 1080p: CRF 22 (klipy z Veo 3.1 Quality mają dużo detalu, wyższy CRF rozmywał faktury drewna i tkanin)
-const CRF_1080 = Number(process.env.HERO_CRF_1080) || 22;
+// liczby ze zmiennych środowiskowych – jawne parsowanie (0 to poprawna wartość, nie „brak”)
+const envNumber = (name, fallback, min, max) => {
+  const raw = process.env[name];
+  const n = raw != null && raw.trim() !== '' ? Number(raw) : NaN;
+  return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+};
+const CRF_1080 = envNumber('HERO_CRF_1080', 22, 0, 51);
 // Telefon trzymany pionowo widzi ok. 1/3 szerokości kadru 16:9 – dostaje sam ten wycinek (608×1080, ta sama gęstość
 // pikseli co 1080p w widocznej części, plik ok. 3× mniejszy). Meble w ujęciach stoją zwykle w prawej części kadru.
-const MOBILE_CX = Number(process.env.HERO_MOBILE_X) || 0.6;
+const MOBILE_CX = envNumber('HERO_MOBILE_X', 0.6, 0, 1);
 const MW = 608;
 const MX = Math.max(0, Math.min(1920 - MW, Math.round((1920 * MOBILE_CX - MW / 2) / 2) * 2));
 const ROOT = path.resolve(import.meta.dirname, '..');

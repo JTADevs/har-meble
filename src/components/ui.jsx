@@ -7,6 +7,9 @@ export function toast(message, tone = 'ok') {
   window.dispatchEvent(new CustomEvent('app-toast', { detail: { message, tone, id: Math.random() } }));
 }
 
+// Powiadomienia trafiają do regionów na żywo, które są w dokumencie od początku (region dodany razem z treścią
+// czytniki ekranu często pomijają): zwykłe – „status” (odczytany po bieżącej wypowiedzi), błędy – „alert” (od razu).
+// aria-atomic="false": przy kilku powiadomieniach naraz czytane jest tylko nowe, nie cała lista.
 export function Toaster() {
   const [items, setItems] = useState([]);
   useEffect(() => {
@@ -18,13 +21,20 @@ export function Toaster() {
     window.addEventListener('app-toast', on);
     return () => window.removeEventListener('app-toast', on);
   }, []);
+  const render = (list) =>
+    list.map((t) => (
+      <div key={t.id} className={`toast toast-${t.tone}`}>
+        {t.message}
+      </div>
+    ));
   return (
     <div className="toaster">
-      {items.map((t) => (
-        <div key={t.id} className={`toast toast-${t.tone}`}>
-          {t.message}
-        </div>
-      ))}
+      <div className="toaster-group" role="status" aria-live="polite" aria-atomic="false">
+        {render(items.filter((t) => t.tone !== 'bad'))}
+      </div>
+      <div className="toaster-group" role="alert" aria-atomic="false">
+        {render(items.filter((t) => t.tone === 'bad'))}
+      </div>
     </div>
   );
 }

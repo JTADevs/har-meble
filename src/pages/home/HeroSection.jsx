@@ -35,8 +35,10 @@ function connectionInfo() {
 }
 
 // Telefon (i wąskie okno) w pionie widzi tylko ok. 1/3 szerokości kadru 16:9: dostaje pionowy wycinek filmu 608×1080
-// z częścią kadru, w której stoją meble – ta sama gęstość pikseli co 1080p na ekranie, plik ok. 3× mniejszy.
-const PORTRAIT = '(max-aspect-ratio: 4/5)';
+// z częścią kadru, w której stoją meble – plik ok. 3× mniejszy. Próg proporcji 4/5 obejmuje też telefony z widocznymi
+// paskami przeglądarki (np. ok. 375×548), ale wycinek ma proporcje 0,56, więc na szerszym ekranie jest powiększany
+// i mocniej przycinany – tablety w pionie (iPad 820×1180, iPad Pro z hero do 1200 px wysokości) dostają pełny kadr.
+const PORTRAIT = '(max-aspect-ratio: 4/5) and (max-width: 640px)';
 const isPortrait = () => typeof window !== 'undefined' && Boolean(window.matchMedia?.(PORTRAIT).matches);
 
 // Pozostałe ekrany: 1080p, gdy kadr ma na ekranie > ~900 px wysokości w pikselach urządzenia, a łącze to uniesie

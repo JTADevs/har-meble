@@ -3,10 +3,11 @@
 import path from 'node:path';
 import nodemailer from 'nodemailer';
 import { COMPANY } from '../shared/site.js';
-import { FILE_TYPES, INQUIRY_TYPES, fileExtension, formatBytes, inquiryRows, inquirySubject } from '../shared/inquiry.js';
+import { FILE_TYPES, INQUIRY_TYPES, fileExtension, formatBytes, inquiryRows, inquirySubject, isEmail } from '../shared/inquiry.js';
 
 const env = process.env;
 const MB = 1024 * 1024;
+const DAY = 24 * 60 * 60 * 1000;
 const truthy = (v) => /^(1|true|tak|yes|on)$/i.test(String(v ?? '').trim());
 
 export const mailConfigured = () => Boolean(env.SMTP_HOST && (env.MAIL_FROM || env.SMTP_USER));
@@ -35,9 +36,21 @@ function transport() {
 const escapeHtml = (s) =>
   String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
+// Adres w linku mailto: zakodowany – znaki typu ? i & nie dopiszą parametrów (np. ukrytego DW), czytelna zostaje „@”.
+const mailtoHref = (email) => `mailto:${encodeURIComponent(String(email ?? '')).replace(/%40/g, '@')}`;
+
+// Dobowy budżet załączników w e-mailach (MAIL_ATTACHMENTS_DAY_MB, domyślnie 300 MB; w pamięci procesu): zasypywanie
+// formularza nie zapcha skrzynki firmy – ponad budżet e-mail ma tylko listę plików, a pliki czekają w panelu.
+const mailed = []; // [czas wysłania, bajty załączników] z ostatniej doby
+function mailBudget(now) {
+  while (mailed.length && now - mailed[0][0] >= DAY) mailed.shift();
+  const used = mailed.reduce((sum, [, bytes]) => sum + bytes, 0);
+  return Math.max(0, (Number(env.MAIL_ATTACHMENTS_DAY_MB) || 300) * MB - used);
+}
+
 // Gmail przyjmuje wiadomości do 25 MB PO zakodowaniu (base64 to ok. +33%) – większe załączniki zostają w panelu.
-function splitAttachments(files) {
-  const limit = (Number(env.MAIL_ATTACHMENTS_MAX_MB) || 18) * MB;
+function splitAttachments(files, budget) {
+  const limit = Math.min((Number(env.MAIL_ATTACHMENTS_MAX_MB) || 18) * MB, budget);
   let used = 0;
   const attached = [];
   const skipped = [];
@@ -54,7 +67,7 @@ function render(inq, skipped) {
   const { contact, details } = inquiryRows(inq);
   const type = INQUIRY_TYPES[inq.type];
   const date = new Date(inq.createdAt).toLocaleString('pl-PL', { timeZone: 'Europe/Warsaw', dateStyle: 'long', timeStyle: 'short' });
-  const fileNote = (f) => (skipped.includes(f) ? ' – za duży do e-maila, pobierz w panelu' : '');
+  const fileNote = (f) => (skipped.includes(f) ? ' – nie dołączony do e-maila, pobierz w panelu' : '');
 
   const textRows = (rows) => rows.map(([k, v]) => (String(v).includes('\n') ? `${k}:\n${v}` : `${k}: ${v}`)).join('\n');
   const text = [
@@ -102,7 +115,7 @@ ${h2(inq.type === 'b2b' ? 'Opis zlecenia' : 'Opis projektu')}
 <div style="white-space:pre-wrap;background:#f4f1ec;border-radius:10px;padding:14px 16px">${escapeHtml(inq.message)}</div>
 ${h2(`Załączniki (${inq.files.length})`)}${filesHtml}
 <p style="margin:28px 0 0;font-size:13px;color:#6b6157">Aby odpowiedzieć klientowi, użyj „Odpowiedz” – wiadomość trafi na
-<a href="mailto:${escapeHtml(inq.contact.email)}" style="color:#8e4f22">${escapeHtml(inq.contact.email)}</a>.</p>
+<a href="${escapeHtml(mailtoHref(inq.contact.email))}" style="color:#8e4f22">${escapeHtml(inq.contact.email)}</a>.</p>
 </div></body></html>`;
 
   return { text, html };
@@ -110,12 +123,13 @@ ${h2(`Załączniki (${inq.files.length})`)}${filesHtml}
 
 // Wysyła powiadomienie o zapytaniu; dir – katalog z plikami tego zapytania. Rzuca błąd, gdy SMTP odrzuci wiadomość.
 export async function sendInquiryMail(inq, dir) {
-  const { attached, skipped } = splitAttachments(inq.files);
+  const { attached, skipped } = splitAttachments(inq.files, mailBudget(Date.now()));
   const { text, html } = render(inq, skipped);
-  return transport().sendMail({
+  const info = await transport().sendMail({
     from: env.MAIL_FROM || { name: `Formularz ${COMPANY.brand}`, address: env.SMTP_USER },
     to: recipientFor(inq.type),
-    replyTo: { name: inq.contact.name, address: inq.contact.email },
+    // „Odpowiedz” tylko na adres, który przechodzi walidację (zapytania zapisane przed jej zaostrzeniem – bez Reply-To)
+    replyTo: isEmail(inq.contact.email) ? { name: inq.contact.name, address: inq.contact.email } : undefined,
     subject: inquirySubject(inq),
     text,
     html,
@@ -125,4 +139,7 @@ export async function sendInquiryMail(inq, dir) {
       contentType: FILE_TYPES[fileExtension(f.stored)] || 'application/octet-stream',
     })),
   });
+  const bytes = attached.reduce((sum, f) => sum + f.size, 0);
+  if (bytes) mailed.push([Date.now(), bytes]);
+  return info;
 }

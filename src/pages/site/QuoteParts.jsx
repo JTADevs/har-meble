@@ -268,7 +268,7 @@ export function FileDrop({ hint, files, issues, error, onAdd, onRemove, inputRef
 
   return (
     <div className="s-quote-field">
-      <label className="s-quote-label" htmlFor={id}>
+      <label className="s-quote-label" id={`${id}-label`} htmlFor={id}>
         Załączniki
       </label>
       <p className="s-quote-hint" id={`${id}-hint`}>
@@ -295,6 +295,8 @@ export function FileDrop({ hint, files, issues, error, onAdd, onRemove, inputRef
           onAdd(e.dataTransfer.files);
         }}
       >
+        {/* nazwa = etykieta + widoczny napis „Wybierz pliki” (sterowanie głosem: „kliknij Wybierz pliki”); napis leży
+            w ukrytej warstwie, ale aria-labelledby wskazuje go wprost, więc wchodzi do nazwy */}
         <input
           ref={inputRef}
           id={id}
@@ -302,6 +304,7 @@ export function FileDrop({ hint, files, issues, error, onAdd, onRemove, inputRef
           type="file"
           multiple
           accept={FILE_ACCEPT}
+          aria-labelledby={`${id}-label ${id}-cta`}
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy(`${id}-hint`, issues.length > 0 && `${id}-issues`, error && `${id}-error`)}
           onChange={(e) => {
@@ -316,7 +319,9 @@ export function FileDrop({ hint, files, issues, error, onAdd, onRemove, inputRef
           <span className="s-quote-drop__title">Przeciągnij pliki tutaj</span>
           <span className="s-quote-drop__title s-quote-drop__title--touch">Dodaj zdjęcia lub pliki</span>
           <span className="s-quote-drop__or">albo</span>
-          <span className="s-quote-drop__btn">Wybierz pliki</span>
+          <span className="s-quote-drop__btn" id={`${id}-cta`}>
+            Wybierz pliki
+          </span>
         </span>
       </div>
 

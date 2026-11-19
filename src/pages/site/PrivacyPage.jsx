@@ -1,8 +1,9 @@
 // Polityka prywatności (/polityka-prywatnosci) – RODO, dane firmy z shared/site.js, spis treści z kotwicami.
 // UWAGA: to SZABLON opisujący działanie wizytówki (formularz wyceny, brak analityki i reklam, pamięć przeglądarki
 // tylko przy logowaniu do panelu). Przed publikacją musi go zweryfikować właścicielka (najlepiej z prawnikiem):
-// datę „Obowiązuje od”, okresy przechowywania, listę odbiorców (np. biuro rachunkowe, jeśli dostaje faktury)
-// i umowę powierzenia z Google – darmowe konto Gmail jej nie obejmuje (umowę powierzenia daje Google Workspace).
+// datę „Obowiązuje od” (COMPANY.privacyEffectiveFrom w shared/site.js), okresy przechowywania, listę odbiorców
+// (np. biuro rachunkowe, jeśli dostaje faktury, i kto zajmuje się obsługą informatyczną) oraz umowę powierzenia
+// z dostawcą hostingu. Gmail jest opisany bez umowy powierzenia – darmowe konto jej nie obejmuje (rozdział „odbiorcy”).
 // W trybie 'pelna' (konta klientów, projekty, konfiguratory 3D) politykę trzeba rozszerzyć.
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -11,8 +12,17 @@ import { Reveal } from '../home/ui.jsx';
 import { COMPANY, ROUTES } from '../../../shared/site.js';
 import './privacy.css';
 
-// Data wejścia w życie – do wpisania przy publikacji; do tego czasu widoczna jako placeholder w nawiasie.
-const EFFECTIVE_FROM = '[data publikacji strony]';
+// Data wejścia w życie z COMPANY.privacyEffectiveFrom (RRRR-MM-DD → „1 grudnia 2026”; inny zapis – bez zmian).
+// Bez daty nawias-przypomnienie widać tylko w trybie deweloperskim, a w buildzie produkcyjnym znika wiersz
+// „Obowiązuje od” i zdanie o dacie w „Zmianach” – nawias nie trafi do odwiedzających. Build celowo się nie
+// przerywa: uruchamiają go też podglądy i przeglądy kodu.
+function effectiveFrom(value) {
+  if (!value) return import.meta.env.DEV ? { label: '[data publikacji strony]' } : null;
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(`${value}T00:00:00Z`) : null;
+  if (!date || Number.isNaN(date.getTime())) return { label: String(value) };
+  return { label: date.toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }), iso: value };
+}
+const EFFECTIVE_FROM = effectiveFrom(COMPANY.privacyEffectiveFrom);
 
 // „sp. z o.o.” bez łamania wiersza w środku
 const LEGAL_NAME = COMPANY.legalName.replace('sp. z o.o.', 'sp. z o.o.');
@@ -112,6 +122,9 @@ const SECTIONS = [
   {
     id: 'okres-przechowywania',
     title: 'Jak długo przechowujemy dane',
+    // Usuwanie po tym czasie jest ręczne – serwer sam niczego nie kasuje: panel /admin → „Usuń zapytanie” usuwa wpis
+    // i załączniki (data/inquiries/<id>). Kopię zapytania wysłaną e-mailem do skrzynki Gmail trzeba usunąć osobno.
+    // 12 miesięcy to wartość z szablonu – do potwierdzenia przez właścicielkę.
     body: (
       <>
         <ul role="list">
@@ -131,15 +144,27 @@ const SECTIONS = [
   {
     id: 'odbiorcy',
     title: 'Komu przekazujemy dane',
+    // Umowa powierzenia – tylko przy hostingu. Skrzynki firmy (COMPANY.email, emailB2B) to darmowe konta Gmail, których
+    // umowa powierzenia nie obejmuje: Google świadczy je na własnych warunkach. Po przejściu na Google Workspace
+    // (umowa powierzenia jest w jego warunkach) Gmail może wrócić do zdania „na nasze polecenie, na podstawie umowy
+    // powierzenia”. Obsługa informatyczna – kategoria możliwych odbiorców, do potwierdzenia przez właścicielkę.
     body: (
       <>
-        <p>
-          Twoje dane mogą otrzymać firmy, które pomagają nam prowadzić stronę i&nbsp;obsługiwać zapytania. Przetwarzają je
-          tylko na nasze polecenie, na podstawie umów powierzenia przetwarzania danych:
-        </p>
+        <p>Twoje dane mogą otrzymać firmy, które pomagają nam prowadzić stronę i&nbsp;obsługiwać zapytania:</p>
         <ul role="list">
-          <li>dostawca hostingu, na którego serwerach działa strona i&nbsp;formularz wyceny,</li>
-          <li>dostawca poczty e-mail&nbsp;– Google (Gmail), przez którego wymieniamy z&nbsp;Tobą wiadomości,</li>
+          <li>
+            dostawca hostingu, na którego serwerach działa strona i&nbsp;formularz wyceny&nbsp;– przetwarza dane tylko na nasze
+            polecenie, na podstawie umowy powierzenia przetwarzania danych,
+          </li>
+          <li>
+            Google (usługa Gmail), przez którą wymieniamy z&nbsp;Tobą wiadomości&nbsp;– na zasadach określonych w&nbsp;warunkach
+            korzystania z&nbsp;usług i&nbsp;
+            <a href="https://policies.google.com/privacy?hl=pl" target="_blank" rel="noopener noreferrer">
+              polityce prywatności Google
+              {NEW_TAB}
+            </a>
+            ,
+          </li>
           <li>firmy, które wspierają nas w&nbsp;obsłudze informatycznej.</li>
         </ul>
         <p>Poza tym przekazujemy dane tylko wtedy, gdy wymagają tego przepisy prawa&nbsp;– np. na żądanie sądu lub urzędu.</p>
@@ -244,7 +269,9 @@ const SECTIONS = [
     body: (
       <p>
         Politykę możemy aktualizować&nbsp;– np. gdy zmienią się przepisy, nasi dostawcy albo funkcje strony. Aktualna wersja
-        jest zawsze dostępna na tej stronie, a&nbsp;data na jej początku pokazuje, od kiedy obowiązuje.
+        jest zawsze dostępna na tej stronie
+        {/* zdanie o dacie tylko wtedy, gdy data jest na początku strony (patrz effectiveFrom) */}
+        {EFFECTIVE_FROM ? <>, a&nbsp;data na jej początku pokazuje, od kiedy obowiązuje.</> : '.'}
       </p>
     ),
   },
@@ -292,7 +319,12 @@ export default function PrivacyPage() {
         <>
           Wyjaśniamy, kto odpowiada za Twoje dane osobowe, jakie dane zbieramy, w&nbsp;jakim celu i&nbsp;jak długo je
           przechowujemy oraz jakie prawa Ci przysługują.
-          <span className="s-privacy-date">Obowiązuje od: {EFFECTIVE_FROM}</span>
+          {EFFECTIVE_FROM && (
+            <span className="s-privacy-date">
+              Obowiązuje od:{' '}
+              {EFFECTIVE_FROM.iso ? <time dateTime={EFFECTIVE_FROM.iso}>{EFFECTIVE_FROM.label}</time> : EFFECTIVE_FROM.label}
+            </span>
+          )}
         </>
       }
     >

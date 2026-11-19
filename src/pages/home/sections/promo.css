@@ -1,5 +1,5 @@
 /* =============================================================================
-   PromoBanner – karta konfiguratora ze zdjęciem kuchni.
+   PromoBanner – karta ze zdjęciem: usługi B2B (wizytówka, .h-promo-card--b2b) albo konfigurator (zdjęcie kuchni).
    PromoBanner.jsx (useScrollProgress) ustawia na karcie dwie zmienne:
      --h-promo-reveal   0 → 1   karta rozkłada się z wcięcia inset(6% 4%) do pełnego rozmiaru,
      --h-promo-shift   −1 → 1   parallaxa zdjęcia (przesunięcie w pionie, obraz w skali 1.12).
@@ -102,6 +102,17 @@
       rgba(29, 24, 20, 0.8) 45%,
       rgba(29, 24, 20, 0.62) 75%,
       rgba(29, 24, 20, 0.35) 100%
+    );
+  }
+
+  /* B2B (wizytówka): jasna hala z białym sufitem i świetlikami, a długi lead i zawinięte przyciski wydłużają kartę,
+     więc eyebrow stoi przy samej górze – gęsty gradient na całej wysokości (eyebrow ≥ 5,5:1 w całym zakresie parallaxy) */
+  .h-promo-card--b2b .h-promo-shade {
+    background: linear-gradient(
+      to top,
+      rgba(29, 24, 20, 0.92) 0%,
+      rgba(29, 24, 20, 0.82) 55%,
+      rgba(29, 24, 20, 0.76) 100%
     );
   }
 }

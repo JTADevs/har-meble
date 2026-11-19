@@ -139,7 +139,8 @@
   gap: 6px 12px;
   height: 100%;
   padding: 20px 20px 22px;
-  border: 1px solid var(--h-line);
+  /* obrys niewybranej karty 3.2:1 do białej karty formularza (WCAG 1.4.11; --h-line dawał tylko 1.5:1) */
+  border: 1px solid var(--q-line-strong);
   border-radius: var(--h-radius);
   background: var(--h-bg);
   color: var(--h-ink);
@@ -170,7 +171,8 @@
   place-items: center;
   width: 22px;
   height: 22px;
-  border: 1.5px solid var(--q-line-strong);
+  /* pierścień radia leży na tle karty (--h-bg), nie na bieli: --q-line-strong miałby tu 2.8:1, --h-muted ma 5.4:1 */
+  border: 1.5px solid var(--h-muted);
   border-radius: 50%;
   color: var(--h-surface);
   transition:
@@ -203,8 +205,9 @@
 }
 
 @media (hover: hover) {
+  /* najechanie wyraźniej niż obrys spoczynkowy (--q-line-strong) */
   .s-quote-mode__input:hover + .s-quote-mode__body {
-    border-color: var(--q-line-strong);
+    border-color: var(--h-muted);
   }
 }
 

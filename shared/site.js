@@ -30,6 +30,9 @@ export const COMPANY = {
   visitNote: 'Przed wizytą prosimy o kontakt, aby ustalić dogodny termin spotkania.',
   regions: 'Śląsk i Wielkopolska',
   experience: 'około 11 lat',
+  // Data wejścia w życie polityki prywatności (RRRR-MM-DD, np. '2026-12-01') – do wpisania przy publikacji strony.
+  // Do tego czasu strona daty nie pokazuje (tylko w trybie deweloperskim widać przypomnienie w nawiasie).
+  privacyEffectiveFrom: null,
   locations: [
     {
       id: 'katowice',

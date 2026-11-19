@@ -1,9 +1,9 @@
 // Sekcja końcowa (#kontakt): ciemna karta z zachętą do rozmowy o projekcie (tekst właścicielki), przyciskiem do
-// formularza wyceny, danymi kontaktowymi obu oddziałów i wolno obracającym się „stemplem” (pauza poza ekranem,
-// brak obrotu przy reduced motion).
+// formularza wyceny, danymi kontaktowymi obu oddziałów i „stemplem”, który obraca się razem z przewijaniem strony
+// (brak obrotu przy reduced motion).
 import { useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowIcon, LINKS, MaskLines, Reveal, useInView } from '../ui.jsx';
+import { ArrowIcon, LINKS, MaskLines, Reveal, useInView, useReducedMotion, useScrollProgress } from '../ui.jsx';
 import { COMPANY, FEATURES, ROUTES } from '../../../../shared/site.js';
 import './finalcta.css';
 
@@ -20,6 +20,10 @@ export const CONTACT = {
 // Tekst na okręgu (r = 74 → obwód ≈ 465 j.). Na końcu twarda spacja – zwykła zostałaby obcięta,
 // a potrzebny jest odstęp na „szwie” między ostatnią kropką a pierwszą literą.
 const STAMP_TEXT = FEATURES.configurator ? 'CENA ORIENTACYJNA NA ŻYWO • PROJEKT 3D •\u00A0' : 'MEBLE NA WYMIAR • USŁUGI B2B • HAR MEBLE •\u00A0';
+
+// Obrót pierścienia na cały przejazd karty przez ekran (od wjazdu dołem do wyjazdu górą). Ruch tylko razem
+// z przewijaniem: stempel nie kręci się sam w nieskończoność obok treści (WCAG 2.2.2 – bez przycisku pauzy).
+const STAMP_TURN = 220; // stopnie
 
 function Stamp() {
   return (
@@ -46,14 +50,25 @@ function Stamp() {
 
 export default function FinalCta() {
   const cardRef = useRef(null);
+  const turn = useRef(NaN);
   const shown = useInView(cardRef, { threshold: 0.2 });
-  // stempel kręci się tylko wtedy, gdy karta jest (prawie) na ekranie
-  const live = useInView(cardRef, { once: false, rootMargin: '80px 0px 80px 0px', threshold: 0 });
+  const reduced = useReducedMotion();
+
+  // Kąt stempla z postępu przewijania (rAF, zmienna CSS na karcie – bez re-renderów React). Zapis tylko przy zmianie:
+  // poza ekranem postęp stoi na 0 albo 1.
+  useScrollProgress(cardRef, (progress) => {
+    const card = cardRef.current;
+    if (!card || reduced) return; // przy ograniczonym ruchu CSS i tak wyłącza obrót
+    const deg = Math.round(progress * STAMP_TURN * 10) / 10;
+    if (deg === turn.current) return;
+    turn.current = deg;
+    card.style.setProperty('--h-cta-turn', `${deg}deg`);
+  });
 
   return (
     <section id="kontakt" className="h-section h-cta-section" aria-labelledby="h-cta-title-1 h-cta-title-2">
       <div className="h-container">
-        <div ref={cardRef} className={`h-cta-card${shown ? ' is-in' : ''}${live ? ' is-live' : ''}`}>
+        <div ref={cardRef} className={`h-cta-card${shown ? ' is-in' : ''}`}>
           <Stamp />
 
           <Reveal as="span" className="h-eyebrow h-cta-eyebrow" y={12}>

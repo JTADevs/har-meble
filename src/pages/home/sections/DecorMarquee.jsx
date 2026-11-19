@@ -67,7 +67,8 @@ const LEAD = nbsp(
         'To przykładowe dekory płyt i blatów – materiały do Twojego projektu dobierzemy razem z Tobą.',
 );
 
-// Legenda pod taśmą: liczba dekorów w grupach + kropka w kolorze przykładowego dekoru.
+// Legenda pod taśmą: liczba dekorów w grupach (tylko w pełnej wersji – w wizytówce, jak w tytule, bez liczb)
+// + kropka w kolorze przykładowego dekoru.
 const GROUP_SAMPLE = { kolor: 'szalwia', drewno: 'dab_naturalny', kamien: 'beton_jasny' };
 const GROUPS = Object.entries(DECOR_GROUPS)
   .map(([key, label]) => {
@@ -102,11 +103,17 @@ const Tile = memo(function Tile({ id, url }) {
       </span>
       <p className="h-marq-label">
         <span className="h-marq-name">{NAMES[id]}</span>
-        <span className="h-marq-sep" aria-hidden="true">
-          {' · '}
-        </span>
-        <span className="h-visually-hidden">, kod </span>
-        <span className="h-marq-code">{d.code}</span>
+        {/* kody (K01…) to wewnętrzne kody prototypu, nie numery z katalogu dostawcy – w wizytówce bez nich,
+            żeby klient nie podawał ich w zapytaniu */}
+        {FEATURES.configurator && (
+          <>
+            <span className="h-marq-sep" aria-hidden="true">
+              {' · '}
+            </span>
+            <span className="h-visually-hidden">, kod </span>
+            <span className="h-marq-code">{d.code}</span>
+          </>
+        )}
       </p>
     </li>
   );
@@ -274,7 +281,7 @@ export default function DecorMarquee() {
             <li key={g.key} className="h-marq-legend-item">
               <span className="h-marq-legend-dot" style={{ background: g.hex }} aria-hidden="true" />
               {g.label}
-              <span className="h-marq-legend-count">{g.count}</span>
+              {FEATURES.configurator && <span className="h-marq-legend-count">{g.count}</span>}
             </li>
           ))}
         </ul>

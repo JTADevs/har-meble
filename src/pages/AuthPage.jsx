@@ -37,7 +37,7 @@ export default function AuthPage({ mode }) {
   return (
     <div className="page narrow">
       <div className="auth-card">
-        <h2>{isLogin ? 'Zaloguj się' : 'Załóż konto'}</h2>
+        <h1>{isLogin ? 'Zaloguj się' : 'Załóż konto'}</h1>
         <p className="muted">
           {!isLogin
             ? 'Konto pozwala zapisywać projekty i wysyłać zapytania do stolarni.'
@@ -66,7 +66,12 @@ export default function AuthPage({ mode }) {
             <span className="field-label">Hasło</span>
             <input type="password" value={form.password} onChange={set('password')} required minLength={6} autoComplete={isLogin ? 'current-password' : 'new-password'} />
           </label>
-          {error && <div className="form-error">{error}</div>}
+          {/* alert – czytnik ekranu odczyta błąd od razu (fokus był na przycisku, który na czas logowania jest wyłączony) */}
+          {error && (
+            <div className="form-error" role="alert">
+              {error}
+            </div>
+          )}
           <button className="btn btn-primary btn-block" disabled={busy}>
             {busy ? 'Chwileczkę…' : isLogin ? 'Zaloguj się' : 'Utwórz konto'}
           </button>

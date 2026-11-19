@@ -268,9 +268,27 @@ export default function ColorPicker() {
 
   // three.js r176 wymaga WebGL2 – bez niego (albo na telefonie, patrz RICH_3D) scena się nie montuje, zostają szkice 2D
   const gl2 = near && rich3d && hasWebGL2();
-  const live3d = ready && !failed;
+  // gl2 w warunku: scena odmontowana (okno zwężone poniżej 900 px, zmiana wskaźnika) od razu oddaje okna szkicom
+  const live3d = gl2 && ready && !failed;
   // obrót (mysz i przyciski) tylko na żywym 3D i bez ograniczenia ruchu
   const dragOn = live3d && !reduced;
+
+  // Odmontowana scena nie jest już gotowa: po ponownym poszerzeniu okna nowa scena najpierw szykuje tekstury
+  // (do tego czasu nic nie rysuje), więc szkice chowa dopiero jej własne onReady – inaczej okna byłyby puste.
+  useEffect(() => {
+    if (!gl2) setReady(false);
+  }, [gl2]);
+
+  // Nagłówek obiecuje 3D tylko tam, gdzie scena może się pokazać (bez WebGL2 albo po błędzie sceny zostają szkice).
+  // Test WebGL2 tworzy kontekst GPU, więc robimy go w wolnej chwili po wczytaniu strony, a nie w pierwszym renderze;
+  // przy sekcji (near) wynik jest już w gl2 (hasWebGL2 zapamiętuje wynik), więc nagłówek nie czeka na wolną chwilę.
+  const [webgl2, setWebgl2] = useState(null); // null – jeszcze nie sprawdzone
+  useEffect(() => {
+    if (!rich3d || webgl2 !== null) return undefined;
+    const handle = idle(() => setWebgl2(hasWebGL2()));
+    return () => cancelIdle(handle);
+  }, [rich3d, webgl2]);
+  const say3d = rich3d && !failed && (near ? gl2 : webgl2 !== false);
 
   // Miniatury dekorów drewnianych do próbek: textures.js ciągnie three.js, więc ładujemy go dopiero przy
   // zbliżaniu się sekcji i generujemy po jednej miniaturze w wolnych chwilach (do tego czasu – kolor hex).
@@ -416,7 +434,7 @@ export default function ColorPicker() {
         <SectionHead
           align="center"
           eyebrow="Twój kolor"
-          title={['Wybierz kolor.', rich3d ? 'Zobacz go od razu w\u00a03D.' : 'Zobacz go od razu.']}
+          title={['Wybierz kolor.', say3d ? 'Zobacz go od razu w\u00a03D.' : 'Zobacz go od razu.']}
           lead={
             FEATURES.configurator
               ? 'Kliknij próbkę, a mebel zmieni wykończenie na Twoich oczach. Te same dekory dobierzesz w konfiguratorze kuchni i szaf – do własnych wymiarów, z ceną orientacyjną liczoną na bieżąco.'

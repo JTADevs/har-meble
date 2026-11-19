@@ -1,6 +1,6 @@
 /* =============================================================================
    Final CTA (#kontakt) – ciemna karta: eyebrow, duży tytuł, lead, przyciski, kontakt
-   i obracający się „stempel”. Prefiks: .h-cta-
+   i „stempel” obracany przewijaniem. Prefiks: .h-cta-
    ============================================================================= */
 
 /* sekcja stoi tuż po FAQ – mniejszy odstęp u góry; kotwica #kontakt nie chowa się pod stałą nawigacją */
@@ -72,13 +72,10 @@
   overflow: visible;
 }
 
+/* obrót razem z przewijaniem (--h-cta-turn ustawia FinalCta.jsx); przejście wygładza skoki kółka myszy */
 .h-cta-stamp-ring {
-  animation: h-cta-spin 32s linear infinite;
-  animation-play-state: paused;
-}
-
-.h-cta-card.is-live .h-cta-stamp-ring {
-  animation-play-state: running;
+  transform: rotate(var(--h-cta-turn, 0deg));
+  transition: transform 0.8s var(--h-ease-out);
 }
 
 .h-cta-stamp-text {
@@ -104,12 +101,6 @@
   stroke-width: 2.4;
   stroke-linecap: round;
   stroke-linejoin: round;
-}
-
-@keyframes h-cta-spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 @media (max-width: 899px) {
@@ -279,7 +270,8 @@
   }
 
   .h-cta-stamp-ring {
-    animation: none;
+    transform: none;
+    transition: none;
   }
 
   .h-cta-body::before {

@@ -246,9 +246,14 @@ export function normalizeInquiry(raw = {}) {
 }
 
 // --- walidacja ------------------------------------------------------------------------------
-const EMAIL_RE = /^[^\s@<>()[\]\\,;:"]+@[^\s@<>()[\]\\,;:"]+\.[^\s@<>()[\]\\,;:".]{2,}$/;
+// Część lokalna z liter łacińskich, cyfr i znaków . _ + -, domena z etykiet z liter (także polskich), cyfr i myślników.
+// Bez ?, &, =, % i podobnych – w linku mailto: (panel, e-mail) dopisałyby parametry, np. ukryte DW.
+const EMAIL_RE = /^[A-Za-z0-9._+-]+@(?:[\p{L}\p{N}](?:[\p{L}\p{N}-]{0,61}[\p{L}\p{N}])?\.)+(?:\p{L}{2,63}|xn--[a-z0-9-]{1,59})$/u;
 
-export const isEmail = (v) => EMAIL_RE.test(String(v || ''));
+export const isEmail = (v) => {
+  const s = String(v || '');
+  return s.length <= 254 && EMAIL_RE.test(s);
+};
 
 function isPhone(v) {
   if (!/^\+?[0-9\s().\-/]+$/.test(v)) return false;

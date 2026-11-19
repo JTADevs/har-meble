@@ -98,7 +98,7 @@ export default function Statement() {
     <section className="h-stmt-section" aria-labelledby="h-stmt-title">
       <div className="h-container h-stmt-inner">
         <Reveal as="p" className="h-eyebrow h-stmt-eyebrow" y={12}>
-          {COMPANY.brand} · {COMPANY.regions}
+          {COMPANY.brand} · {COMPANY.regions.replace(' i ', ' i\u00a0')}
         </Reveal>
 
         <h2 id="h-stmt-title" className="h-stmt-title">

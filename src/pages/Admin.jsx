@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, getToken } from '../api.js';
 import { DEFAULT_PRICING, PRICING_SCHEMA, STATUSES, getPath, setPath } from '../../shared/catalog.js';
@@ -10,6 +10,11 @@ import { INQUIRY_STATUSES, INQUIRY_TYPES, LABELS, formatBytes, inquiryRows, inqu
 import { StatusBadge, toast } from '../components/ui.jsx';
 
 const fmtDate = (iso) => (iso ? new Date(iso).toLocaleString('pl-PL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '–');
+
+// Adres z formularza w linku mailto: zakodowany (z „@” bez zmian) – walidacja przepuszcza znaki ?, &, # i %,
+// a niezakodowane dopisałyby do wiadomości temat, treść albo dodatkowych odbiorców (np. „…?bcc=…”).
+const mailtoHref = (email, subject) =>
+  `mailto:${encodeURIComponent(email).replace(/%40/g, '@')}${subject ? `?subject=${encodeURIComponent(subject)}` : ''}`;
 
 // Wizytówka (etap 1): tylko zapytania z formularza wyceny. Pełna wersja: do tego projekty z konfiguratora i cennik.
 const TABS = FEATURES.configurator
@@ -26,7 +31,7 @@ export default function Admin() {
     <div className="page wide">
       <div className="page-head">
         <div>
-          <h2>Panel {COMPANY.brand}</h2>
+          <h1>Panel {COMPANY.brand}</h1>
           <p className="muted">
             {TABS.length > 1
               ? 'Zapytania z formularza wyceny, projekty wysłane z konfiguratora i cennik konfiguratora.'
@@ -109,6 +114,9 @@ function FormInquiries() {
   const [openId, setOpenId] = useState(null);
   const [status, setStatus] = useState('');
   const [type, setType] = useState('');
+  const toggleRefs = useRef({}); // przyciski z nazwą klienta w wierszach (id zapytania → przycisk)
+  const refreshRef = useRef(null);
+  const focusAfterDelete = useRef(null); // id zapytania, którego wiersz dostaje fokus po usunięciu, albo 'refresh'
 
   const load = useCallback(() => {
     setError('');
@@ -120,6 +128,17 @@ function FormInquiries() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Usunięcie zabiera z dokumentu wiersz szczegółów razem z przyciskiem „Usuń zapytanie”, który miał fokus –
+  // bez tego fokus spadłby na <body>. Trafia na sąsiedni wiersz, a gdy lista jest pusta – na „Odśwież”.
+  useEffect(() => {
+    const target = focusAfterDelete.current;
+    if (!target) return;
+    focusAfterDelete.current = null;
+    (toggleRefs.current[target] ?? refreshRef.current)?.focus();
+  }, [list]);
+
+  const matches = (i) => (!status || i.status === status) && (!type || i.type === type);
 
   const patch = async (id, body, okMessage) => {
     try {
@@ -137,6 +156,9 @@ function FormInquiries() {
     if (!window.confirm(`Usunąć zapytanie od: ${inq.contact.company || inq.contact.name} razem z załącznikami? Tego nie można cofnąć.`)) return;
     try {
       await api(`/api/admin/inquiries/${encodeURIComponent(inq.id)}`, { method: 'DELETE' });
+      const visible = list.filter(matches);
+      const i = visible.findIndex((x) => x.id === inq.id);
+      focusAfterDelete.current = (visible[i + 1] ?? visible[i - 1])?.id ?? 'refresh';
       setList((l) => l.filter((x) => x.id !== inq.id));
       setOpenId(null);
       toast('Zapytanie usunięte.');
@@ -158,7 +180,7 @@ function FormInquiries() {
     );
   }
 
-  const shown = list.filter((i) => (!status || i.status === status) && (!type || i.type === type));
+  const shown = list.filter(matches);
   const count = (s) => list.filter((i) => i.status === s).length;
 
   return (
@@ -201,7 +223,7 @@ function FormInquiries() {
             ))}
           </select>
         </label>
-        <button type="button" className="btn btn-sm" onClick={load}>
+        <button ref={refreshRef} type="button" className="btn btn-sm" onClick={load}>
           Odśwież
         </button>
       </div>
@@ -239,6 +261,10 @@ function FormInquiries() {
                       <td>
                         {/* przycisk – szczegóły otwiera też klawiatura (cały wiersz klika się myszą) */}
                         <button
+                          ref={(el) => {
+                            if (el) toggleRefs.current[inq.id] = el;
+                            else delete toggleRefs.current[inq.id];
+                          }}
                           type="button"
                           className="inq-toggle"
                           aria-expanded={open}
@@ -299,7 +325,7 @@ function FormInquiryDetail({ inq, onPatch, onDelete }) {
   const [busy, setBusy] = useState(false);
   const [downloading, setDownloading] = useState(null);
   const { contact, details } = inquiryRows(inq);
-  const replyHref = `mailto:${inq.contact.email}?subject=${encodeURIComponent(`Re: ${inquirySubject(inq)}`)}`;
+  const replyHref = mailtoHref(inq.contact.email, `Re: ${inquirySubject(inq)}`);
 
   const saveNote = async () => {
     setBusy(true);
@@ -319,7 +345,7 @@ function FormInquiryDetail({ inq, onPatch, onDelete }) {
   };
 
   const value = (label, v) => {
-    if (label === LABELS.email) return <a href={`mailto:${v}`}>{v}</a>;
+    if (label === LABELS.email) return <a href={mailtoHref(v)}>{v}</a>;
     if (label === LABELS.phone) return <a href={`tel:${v.replace(/[^\d+]/g, '')}`}>{v}</a>;
     return v;
   };
@@ -327,9 +353,9 @@ function FormInquiryDetail({ inq, onPatch, onDelete }) {
   return (
     <div className="inquiry">
       <div className="inquiry-info">
-        <h4>{inq.type === 'b2b' ? 'Opis zlecenia' : 'Opis projektu'}</h4>
+        <h2>{inq.type === 'b2b' ? 'Opis zlecenia' : 'Opis projektu'}</h2>
         <p className="quote pre-wrap">{inq.message}</p>
-        <h4>Kontakt</h4>
+        <h2>Kontakt</h2>
         <dl className="mini-dl inq-dl">
           {contact.map(([label, v]) => (
             <Fragment key={label}>
@@ -340,7 +366,7 @@ function FormInquiryDetail({ inq, onPatch, onDelete }) {
         </dl>
         {details.length > 0 && (
           <>
-            <h4>Szczegóły</h4>
+            <h2>Szczegóły</h2>
             <dl className="mini-dl inq-dl">
               {details.map(([label, v]) => (
                 <Fragment key={label}>
@@ -351,7 +377,7 @@ function FormInquiryDetail({ inq, onPatch, onDelete }) {
             </dl>
           </>
         )}
-        <h4>Załączniki ({inq.files.length})</h4>
+        <h2>Załączniki ({inq.files.length})</h2>
         {inq.files.length ? (
           <ul className="inq-files">
             {inq.files.map((f) => (
@@ -510,7 +536,7 @@ function InquiryDetail({ p, onSaved }) {
   return (
     <div className="inquiry">
       <div className="inquiry-info">
-        <h4>Wiadomość od klienta</h4>
+        <h2>Wiadomość od klienta</h2>
         <p className="quote">{p.clientMessage || <span className="muted">(brak wiadomości)</span>}</p>
         <dl className="mini-dl">
           <dt>Telefon</dt>
@@ -623,7 +649,7 @@ function PricingEditor() {
       </div>
       <aside className="pricing-side">
         <div className="card sticky">
-          <h4>Podgląd wpływu na ceny</h4>
+          <h2>Podgląd wpływu na ceny</h2>
           <p className="muted small">Przykładowe projekty (domyślna kuchnia L i szafa 240 cm) przeliczone wg cennika w formularzu.</p>
           <div className="preview-row">
             <span>Kuchnia – brutto</span>

@@ -4,7 +4,7 @@
   --surface-2: #faf7f2;
   --ink: #2a231d;
   --ink-2: #4a4037;
-  --muted: #85786b;
+  --muted: #6b6157; /* drobny tekst min. 4.5:1 na tłach (5.4:1 na --bg, 5.7:1 na --surface-2, 6:1 na bieli) */
   --line: #e7dfd4;
   --line-2: #d8cdbf;
   --accent: #a0602a;
@@ -50,6 +50,12 @@ h4 {
 
 h4 {
   font-size: 0.95rem;
+}
+
+/* cel przejścia do sekcji z innej podstrony (/#o-nas, App.jsx → focusAnchor): fokus z kodu – bez obwódki wokół
+   całej sekcji (selektor mocniejszy niż .h-page :focus-visible z home.css) */
+[data-anchor-focus][tabindex]:focus {
+  outline: none;
 }
 
 a {
@@ -283,6 +289,10 @@ a:focus-visible {
 }
 .page.narrow {
   max-width: 460px;
+}
+/* tytuł strony (logowanie, panel, 404, błąd) to h1 dla czytników ekranu – wygląda jak dawny h2 */
+.page h1 {
+  font-size: 1.5em;
 }
 .page-head {
   display: flex;
@@ -1237,9 +1247,16 @@ table.cutlist td {
   left: 50%;
   transform: translateX(-50%);
   display: grid;
-  gap: 8px;
   z-index: 200;
   width: min(440px, calc(100% - 32px));
+}
+/* dwa stałe regiony na żywo (ui.jsx: zwykłe powiadomienia i błędy) – pusty nie dokłada odstępu */
+.toaster-group {
+  display: grid;
+  gap: 8px;
+}
+.toaster-group:not(:empty) + .toaster-group:not(:empty) {
+  margin-top: 8px;
 }
 .toast {
   padding: 11px 16px;
@@ -1429,6 +1446,11 @@ table.cutlist td {
 .inquiry-form {
   display: grid;
   gap: 4px;
+}
+/* nagłówki szczegółów zapytania i podglądu cen – h2 pod h1 panelu (bez przeskoku poziomów), wielkość dawnego h4 */
+.inquiry-info h2,
+.pricing-side h2 {
+  font-size: 0.95rem;
 }
 .inquiry-form .btn {
   margin-top: 10px;

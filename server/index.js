@@ -3,29 +3,60 @@ import path from 'node:path';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { spawn } from 'node:child_process';
-import { db, load, save, hashPassword, verifyPassword } from './db.js';
+import { DEV_TOOLS, SESSION_TTL_MS, db, hashPassword, load, pruneSessions, save, sessionExpired, sessionOf, verifyPassword } from './db.js';
 import { DEFAULT_PRICING, STATUSES, normalizePricing, pricingForClient, uid } from '../shared/catalog.js';
 import { priceProject, sanitizeProjectConfig } from '../shared/pricing.js';
 import { FEATURES } from '../shared/site.js';
-import { registerInquiryRoutes } from './inquiries.js';
+import { clientKey, registerInquiryRoutes, windowCounter } from './inquiries.js';
 
-load();
+await load();
 const app = express();
 
-// Za reverse proxy (nginx, hosting) req.ip to adres proxy – TRUST_PROXY (np. 1 albo loopback) każe brać adres
-// klienta z X-Forwarded-For. Potrzebne m.in. do limitu zgłoszeń formularza wyceny liczonego na IP.
-if (process.env.TRUST_PROXY) {
-  const trust = process.env.TRUST_PROXY;
-  app.set('trust proxy', /^\d+$/.test(trust) ? Number(trust) : trust === 'true' ? true : trust);
+// Za reverse proxy (nginx, hosting) req.ip to adres proxy – TRUST_PROXY każe brać adres klienta z X-Forwarded-For
+// (limity formularza wyceny i logowania liczone na IP). Wartości: liczba proxy przed serwerem (1 – nginx,
+// 2 – Cloudflare + nginx), 'loopback' albo lista adresów/CIDR; brak, false, 0, no, off – wyłączone. 'true' odrzucamy:
+// Express wziąłby wtedy pierwszy adres z X-Forwarded-For, który wpisuje sam klient (każde żądanie – nowe „IP”).
+const trustProxy = String(process.env.TRUST_PROXY ?? '').trim();
+if (trustProxy && !/^(false|0|no|off)$/i.test(trustProxy)) {
+  let value = /^\d+$/.test(trustProxy) ? Number(trustProxy) : trustProxy;
+  if (/^(true|yes|on)$/i.test(trustProxy)) {
+    console.error(`TRUST_PROXY=${trustProxy} ufałoby X-Forwarded-For od każdego klienta – używam 'loopback'. Podaj liczbę proxy (np. 1) albo ich adresy.`);
+    value = 'loopback';
+  }
+  try {
+    app.set('trust proxy', value);
+  } catch (err) {
+    console.error(`TRUST_PROXY=${trustProxy}: nieprawidłowa wartość (${err.message}) – używam 'loopback'.`);
+    app.set('trust proxy', 'loopback');
+  }
+} else if (!trustProxy && process.env.NODE_ENV === 'production') {
+  // Bez TRUST_PROXY za proxy wszyscy klienci mają adres proxy i dzielą jeden limit – ostrzeżenie raz, przy pierwszym
+  // żądaniu z nagłówkiem proxy (jawne TRUST_PROXY=0 je wyłącza).
+  let warned = false;
+  app.use((req, _res, next) => {
+    if (!warned && (req.headers['x-forwarded-for'] || req.headers.forwarded)) {
+      warned = true;
+      console.warn('Żądania przychodzą przez proxy (X-Forwarded-For), a TRUST_PROXY nie jest ustawione – limity formularza i logowania liczą wszystkich klientów jako jeden adres. Ustaw TRUST_PROXY (np. 1).');
+    }
+    next();
+  });
 }
 
-// Tylko tryb deweloperski: zapis renderów ze studia (/studio) do public/renders. Rejestrowane przed globalnym
-// parserem JSON, bo obrazy są większe niż jego limit.
-if (process.env.NODE_ENV !== 'production') {
+// Tylko `npm run dev` (DEV_TOOLS=1, nigdy w produkcji): zapis renderów ze studia (/studio) do public/renders i eksport
+// filmu. Rejestrowane przed globalnym parserem JSON, bo obrazy są większe niż jego limit.
+if (DEV_TOOLS) {
+  // Tylko bezpośrednie połączenia z tego komputera, sprawdzane przed odczytem treści. Za reverse proxy na tym samym
+  // hoście adres gniazda to też 127.0.0.1, ale proxy dokleja wtedy nagłówki z adresem klienta.
+  const localOnly = (req, res, next) =>
+    /^(::1|127\.0\.0\.1|::ffff:127\.0\.0\.1)$/.test(req.socket.remoteAddress || '') &&
+    !req.headers['x-forwarded-for'] &&
+    !req.headers.forwarded &&
+    !req.headers['x-real-ip']
+      ? next()
+      : res.status(403).json({ error: 'Tylko localhost.' });
+
   const rendersDir = path.resolve(import.meta.dirname, '../public/renders');
-  app.post('/api/dev/render', express.json({ limit: '40mb' }), (req, res) => {
-    const ip = req.socket.remoteAddress || '';
-    if (!/^(::1|127\.0\.0\.1|::ffff:127\.0\.0\.1)$/.test(ip)) return res.status(403).json({ error: 'Tylko localhost.' });
+  app.post('/api/dev/render', localOnly, express.json({ limit: '40mb' }), (req, res) => {
     const name = String(req.body?.name || '').replace(/[^a-z0-9-]/g, '').slice(0, 60);
     const m = /^data:image\/(jpeg|png);base64,([A-Za-z0-9+/=]+)$/.exec(String(req.body?.data || ''));
     if (!name || !m) return res.status(400).json({ error: 'Nieprawidłowe dane.' });
@@ -37,8 +68,6 @@ if (process.env.NODE_ENV !== 'production') {
 
   // Eksport filmu z hero (/studio/film): surowe klatki RGBA z przeglądarki idą prosto do ffmpeg (bez plików pośrednich).
   const exportsDir = path.resolve(import.meta.dirname, '../exports');
-  const localOnly = (req, res, next) =>
-    /^(::1|127\.0\.0\.1|::ffff:127\.0\.0\.1)$/.test(req.socket.remoteAddress || '') ? next() : res.status(403).json({ error: 'Tylko localhost.' });
   let rec = null; // { proc, file, w, h, frames, log, closed }
 
   app.post('/api/dev/film/start', localOnly, express.json(), (req, res) => {
@@ -111,8 +140,15 @@ const publicUser = (u) => ({ id: u.id, name: u.name, email: u.email, phone: u.ph
 // --- uwierzytelnianie ---------------------------------------------------------
 app.use((req, _res, next) => {
   const token = (req.get('authorization') || '').replace(/^Bearer\s+/i, '');
-  const session = token && db.sessions[token];
-  req.user = session ? db.users.find((u) => u.id === session.userId) : null;
+  let session = sessionOf(token);
+  if (session && sessionExpired(session)) {
+    delete db.sessions[token];
+    save();
+    session = null;
+  }
+  const user = session ? db.users.find((u) => u.id === session.userId) : null;
+  // wizytówka nie ma kont klientów – sesja klienta (np. sprzed przełączenia z trybu pelna) nie loguje
+  req.user = user && (FEATURES.accounts || user.role === 'admin') ? user : null;
   req.token = token;
   next();
 });
@@ -122,11 +158,13 @@ const requireAdmin = (req, res, next) => (req.user?.role === 'admin' ? next() : 
 
 function createSession(userId) {
   const token = crypto.randomBytes(32).toString('hex');
-  db.sessions[token] = { userId, createdAt: nowIso() };
+  const now = Date.now();
+  pruneSessions(now); // wygasłe sesje sprzątamy przy okazji logowania (bez timera)
+  db.sessions[token] = { userId, createdAt: new Date(now).toISOString(), expiresAt: new Date(now + SESSION_TTL_MS).toISOString() };
   return token;
 }
 
-app.post('/api/auth/register', (req, res) => {
+app.post('/api/auth/register', async (req, res) => {
   // wizytówka (etap 1) nie ma kont klientów – jedyne konto to panel firmy (ADMIN_EMAIL / seed demo)
   if (!FEATURES.accounts) return res.status(403).json({ error: 'Rejestracja kont jest wyłączona.' });
   const { name, email, password, phone } = req.body || {};
@@ -134,14 +172,18 @@ app.post('/api/auth/register', (req, res) => {
   if (!String(name || '').trim() || !/^\S+@\S+\.\S+$/.test(em) || String(password || '').length < 6) {
     return res.status(400).json({ error: 'Podaj imię, poprawny e-mail i hasło (min. 6 znaków).' });
   }
-  if (db.users.some((u) => u.email === em)) return res.status(409).json({ error: 'Konto z tym adresem e-mail już istnieje.' });
+  const taken = () => db.users.some((u) => u.email === em);
+  if (taken()) return res.status(409).json({ error: 'Konto z tym adresem e-mail już istnieje.' });
+  const hash = await hashPassword(password);
+  // równoległe żądanie mogło założyć to konto w trakcie liczenia hasha
+  if (taken()) return res.status(409).json({ error: 'Konto z tym adresem e-mail już istnieje.' });
   const user = {
     id: uid(),
     name: String(name).trim().slice(0, 80),
     email: em,
     phone: String(phone || '').slice(0, 30),
     role: 'client',
-    password: hashPassword(password),
+    password: hash,
     createdAt: nowIso(),
   };
   db.users.push(user);
@@ -150,10 +192,39 @@ app.post('/api/auth/register', (req, res) => {
   res.json({ token, user: publicUser(user) });
 });
 
-app.post('/api/auth/login', (req, res) => {
+// Limity nieudanych logowań w 15 minut: z jednego adresu i na jeden e-mail. Próbę liczymy z góry, zanim policzy się
+// hash (inaczej równoległe żądania przeszłyby wszystkie przed zapisaniem pierwszej porażki), a udaną cofamy.
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_MAX_PER_IP = 20;
+const LOGIN_MAX_PER_EMAIL = 10;
+const loginFailsByIp = windowCounter(LOGIN_WINDOW_MS);
+const loginFailsByEmail = windowCounter(LOGIN_WINDOW_MS);
+// Hash do porównania, gdy konta nie ma – odpowiedź trwa tyle samo, więc czas nie zdradza, który e-mail ma konto.
+const DUMMY_HASH = `${'0'.repeat(32)}:${'0'.repeat(128)}`;
+
+app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body || {};
-  const user = db.users.find((u) => u.email === String(email || '').trim().toLowerCase());
-  if (!user || !verifyPassword(password, user.password)) return res.status(401).json({ error: 'Nieprawidłowy e-mail lub hasło.' });
+  const em = String(email || '').trim().toLowerCase();
+  const ip = clientKey(req);
+  const emailKey = em.slice(0, 254); // klucz licznika – bez megabajtowych „adresów” w pamięci
+  const now = Date.now();
+  const wait = Math.max(
+    loginFailsByIp.count(ip, now) >= LOGIN_MAX_PER_IP ? loginFailsByIp.wait(ip, now) : 0,
+    loginFailsByEmail.count(emailKey, now) >= LOGIN_MAX_PER_EMAIL ? loginFailsByEmail.wait(emailKey, now) : 0,
+  );
+  if (wait) {
+    res.set('Retry-After', String(wait));
+    return res.status(429).json({ error: 'Zbyt wiele nieudanych prób logowania. Spróbuj ponownie za kilka minut.' });
+  }
+  loginFailsByIp.add(ip, now);
+  loginFailsByEmail.add(emailKey, now);
+  const user = db.users.find((u) => u.email === em);
+  const ok = await verifyPassword(password, user ? user.password : DUMMY_HASH);
+  if (!user || !ok) return res.status(401).json({ error: 'Nieprawidłowy e-mail lub hasło.' });
+  loginFailsByIp.undo(ip);
+  loginFailsByEmail.undo(emailKey);
+  // wizytówka nie ma kont klientów – loguje się tylko panel firmy (bez zakładania sesji klienta)
+  if (!FEATURES.accounts && user.role !== 'admin') return res.status(403).json({ error: 'Logowanie klientów jest wyłączone.' });
   const token = createSession(user.id);
   save();
   res.json({ token, user: publicUser(user) });
@@ -162,7 +233,7 @@ app.post('/api/auth/login', (req, res) => {
 app.get('/api/auth/me', requireAuth, (req, res) => res.json({ user: publicUser(req.user) }));
 
 app.post('/api/auth/logout', (req, res) => {
-  if (req.token && db.sessions[req.token]) {
+  if (sessionOf(req.token)) {
     delete db.sessions[req.token];
     save();
   }

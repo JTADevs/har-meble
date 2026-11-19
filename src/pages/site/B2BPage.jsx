@@ -274,7 +274,7 @@ function HeaderAside() {
   return (
     <div className="s-b2b-aside">
       <p className="s-b2b-aside__lead">
-        Korzystamy z&nbsp;<strong>{COMPANY.experience} doświadczenia</strong> w&nbsp;stolarstwie, wspierając firmy przy
+        Korzystamy z&nbsp;<strong>{COMPANY.experience.replace(/ /g, '\u00a0')} doświadczenia</strong> w&nbsp;stolarstwie, wspierając firmy przy
         pojedynczych zleceniach i&nbsp;stałej współpracy.
       </p>
       <ul className="s-b2b-aside__facts" role="list">

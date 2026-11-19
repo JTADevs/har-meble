@@ -4,7 +4,7 @@
 // usługę (?usluga=Cięcie) albo rodzaj mebli (?mebel=Kuchnia) i dopisać do opisu inspirację (?inspiracja=) lub dekor (?dekor=).
 // Walidacja na żywo tymi samymi regułami co na serwerze (shared/inquiry.js); wysyłka multipart z paskiem postępu.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigationType, useSearchParams } from 'react-router-dom';
 import PageShell from './PageShell.jsx';
 import { ArrowIcon, Reveal } from '../home/ui.jsx';
 import { B2B_SERVICES, COMPANY, FURNITURE_TYPES, ROUTES } from '../../../shared/site.js';
@@ -218,6 +218,7 @@ function Success({ result, headingRef, onAgain }) {
 export default function QuotePage() {
   const [params, setParams] = useSearchParams();
   const location = useLocation();
+  const navType = useNavigationType();
   const mode = modeFromParams(params);
   const b2b = mode === 'b2b';
   const wide = useMediaQuery(WIDE);
@@ -246,6 +247,7 @@ export default function QuotePage() {
   const startedAt = useRef(0);
   const selfNav = useRef(false); // zmiana adresu przez przełącznik trybu (replace) – bez ponownego wypełniania
   const firstKey = useRef(location.key);
+  const lastUrl = useRef(location.pathname + location.search); // adres bez kotwicy przy poprzednim wejściu
   const pendingFocus = useRef(null); // 'success' | 'form' – dokąd przenieść fokus po zmianie widoku
   const nextFileFocus = useRef(null); // po usunięciu pliku: kolejny przycisk „Usuń” albo pole wyboru plików
 
@@ -255,18 +257,30 @@ export default function QuotePage() {
     return () => xhrRef.current?.abort();
   }, []);
 
-  // Wejście z innego linku przy otwartej stronie (np. „Usługi B2B” w nawigacji): tryb zmienia sam adres,
+  // Wejście z innego linku przy otwartej stronie (np. „Zapytanie B2B” w stopce): tryb zmienia sam adres,
   // a usługi, rodzaje mebli i linie opisu dopisujemy do tego, co już jest. Po wysłaniu – znowu formularz.
+  // Kliknięty link (nie „Wstecz”/„Dalej”) przewija do formularza i daje fokus jego nagłówkowi – inaczej zmiana
+  // zachodzi poza ekranem, a przy linku pod tym samym adresem przewinięcia nie zmienia nawet router.
+  // Sama kotwica pod tym samym adresem (np. „Przejdź do treści” = #tresc: przeglądarka zgłasza ją jak „Wstecz”,
+  // z nowym kluczem wpisu) nie jest nowym wejściem – potwierdzenie wysłania i poprawki w formularzu zostają.
   useEffect(() => {
-    if (location.key === firstKey.current) return;
+    const url = location.pathname + location.search;
+    const sameUrl = url === lastUrl.current;
+    lastUrl.current = url;
+    if (location.key === firstKey.current || (sameUrl && (navType === 'POP' || location.hash))) return;
     if (selfNav.current) {
       selfNav.current = false;
       return;
     }
     setValues((v) => applyPrefill(v, readPrefill(params)));
+    const reveal = navType !== 'POP';
     if (result) {
       startedAt.current = Date.now();
+      if (reveal) pendingFocus.current = 'form'; // przewinięcie i fokus po zamianie potwierdzenia na formularz
       setResult(null);
+    } else if (reveal) {
+      cardRef.current?.scrollIntoView({ block: 'start', behavior: scrollBehavior() });
+      titleRef.current?.focus({ preventScroll: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reagujemy tylko na nowe wejście w historii
   }, [location.key]);

@@ -25,11 +25,16 @@ Otwórz http://localhost:5173
 | Klient (demo, tylko tryb `pelna`) | `klient@demo.pl` | `demo123` |
 | Panel firmy (admin) | `admin@stolarnia.pl` | `admin123` |
 
-Konta demo istnieją tylko w trybie deweloperskim. W produkcji (`NODE_ENV=production`) baza startuje pusta, a konto panelu
-zakłada się zmiennymi `ADMIN_EMAIL` i `ADMIN_PASSWORD` (min. 12 znaków) przy pierwszym starcie.
+Konta demo i narzędzia deweloperskie (`/api/dev/*` – studio renderów, eksport filmu) działają tylko przy `npm run dev`,
+który ustawia `DEV_TOOLS=1` (w produkcji ta zmienna jest ignorowana). W produkcji (`npm start`, `NODE_ENV=production`)
+baza startuje pusta, a konto panelu zakładają zmienne `ADMIN_EMAIL` i `ADMIN_PASSWORD` (min. 12 znaków). Zmienne wygrywają
+z bazą przy każdym starcie: nowe `ADMIN_PASSWORD` zmienia hasło i wylogowuje dotychczasowe sesje tego konta. Sesja panelu
+wygasa po 14 dniach. Logowanie ma limit nieudanych prób (20 z jednego adresu i 10 na jeden e-mail w 15 minut).
+W wizytówce (bez kont klientów) zalogować może się tylko konto panelu.
 
 Dane trzymane są w `data/db.json` (zapytania z formularza: `data/inquiries/`). Usunięcie `db.json` przywraca stan demo
-(przy następnym starcie serwera).
+(przy następnym starcie `npm run dev`). **Nie kopiuj katalogu `data/` z komputera deweloperskiego na serwer** – produkcja
+i tak usuwa przy starcie konta demo, które mają hasła z tej tabeli, ale baza deweloperska zawiera też testowe dane.
 
 ## Co jest w prototypie
 
@@ -145,9 +150,13 @@ Dane trzymane są w `data/db.json` (zapytania z formularza: `data/inquiries/`). 
 - **Strona `/wycena`** (`src/pages/site/QuotePage.jsx`): jeden formularz w dwóch trybach – meble na wymiar albo usługi B2B.
   Załączniki: do 10 plików, jeden do 15 MB, razem do 25 MB (zdjęcia z HEIC, PDF, DXF, DWG, CSV, XLS/XLSX, TXT, ZIP).
   Linki mogą otworzyć formularz z wyborem: `?typ=b2b`, `?usluga=Cięcie`, `?mebel=Kuchnia`, `?inspiracja=…`, `?dekor=…`.
-- **API** `POST /api/inquiries` (`server/inquiries.js`, multipart bez dodatkowych bibliotek – parser FormData z Node).
-  Te same reguły walidacji co w przeglądarce (`shared/inquiry.js`), limit 5 zgłoszeń na 10 minut z jednego IP,
-  ukryte pole-pułapka na boty i minimalny czas wypełnienia (3 s).
+- **API** `POST /api/inquiries` (`server/inquiries.js`, multipart bez dodatkowych bibliotek – parser FormData z Node,
+  pliki zapisywane strumieniem prosto na dysk). Te same reguły walidacji co w przeglądarce (`shared/inquiry.js`),
+  ukryte pole-pułapka na boty i minimalny czas wypełnienia (3 s). Ochrona przed zasypywaniem: z jednego adresu
+  (IPv6 – pula /64) 5 zgłoszeń na 10 minut i 10 na dobę, jedna wysyłka naraz; najwyżej 3 formularze odczytywane
+  jednocześnie na całym serwerze; dobowy limit całego formularza 100 zapytań i 1 GB załączników oraz zapas 512 MB
+  wolnego miejsca na dysku (po przekroczeniu klient dostaje e-mail i telefon firmy). Formularz przyjmuje tylko
+  wysyłki z naszej strony (`Origin` / `Sec-Fetch-Site`, adresy z `PUBLIC_ORIGIN`).
 - **Zapis**: rekord w `data/db.json` (`inquiries`), pliki w `data/inquiries/<id>/` pod losowymi nazwami (`data/` nie jest serwowany).
 - **Panel** `/admin` → „Formularz wyceny”: status, notatka, pobieranie załączników, odpowiedź e-mailem, usuwanie zapytania.
 - **E-mail** (`server/mailer.js`, nodemailer): powiadomienie na adres z `shared/site.js` – meble na `COMPANY.email`, B2B na
@@ -164,7 +173,11 @@ Dane trzymane są w `data/db.json` (zapytania z formularza: `data/inquiries/`). 
 | `MAIL_FROM` | nadawca, np. `"Formularz HAR MEBLE" <har.meble@gmail.com>` (domyślnie `SMTP_USER`) |
 | `MAIL_TO`, `MAIL_TO_B2B` | inni adresaci zapytań o meble / B2B niż adresy z `shared/site.js` |
 | `MAIL_ATTACHMENTS_MAX_MB` | ile MB załączników dołączać do e-maila (domyślnie 18 – Gmail przyjmuje 25 MB po zakodowaniu); reszta tylko w panelu |
-| `TRUST_PROXY` | za reverse proxy (np. `1` albo `loopback`) – limit zgłoszeń liczy się z prawdziwego IP klienta |
+| `MAIL_ATTACHMENTS_DAY_MB` | dobowy budżet załączników w e-mailach (domyślnie 300 MB); ponad niego e-mail ma tylko listę plików, pliki są w panelu |
+| `PUBLIC_ORIGIN` | adres strony, np. `https://harmeble.pl` (kilka – po przecinku; także wersja z `www`) – z niego formularz przyjmuje wysyłki; poza produkcją dochodzi `http://localhost:5173` |
+| `TRUST_PROXY` | za reverse proxy: liczba proxy przed serwerem (`1` – nginx, `2` – Cloudflare + nginx), `loopback` albo adresy/CIDR; `true` jest odrzucane (pozwalałoby klientom podszywać się pod dowolny adres). Bez tej zmiennej za proxy wszyscy klienci dzielą jeden limit – serwer ostrzeże o tym w logu |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | konto panelu w produkcji (patrz „Uruchomienie”) |
+| `DEV_TOOLS` | `1` – narzędzia deweloperskie i konta demo (ustawia `npm run dev`; w produkcji ignorowane) |
 
 ```bash
 SMTP_HOST=smtp.gmail.com SMTP_PORT=465 SMTP_SECURE=true \
@@ -181,10 +194,15 @@ src/      React + React Router, scena 3D: three.js / @react-three/fiber / drei
 
 ## Przed publikacją wizytówki (etap 1)
 
-- Domena, hosting Node (np. VPS) z HTTPS, `NODE_ENV=production`, `ADMIN_EMAIL`/`ADMIN_PASSWORD`, SMTP do wysyłki zapytań
-  (sekcja „Formularz wyceny i e-maile”), `TRUST_PROXY` za reverse proxy, kopie zapasowe `data/`.
-- `og:image`/`og:url` w `index.html` z pełnym adresem domeny, data w polityce prywatności, potwierdzenie przez właścicielkę
-  odbiorców danych (Gmail bez Google Workspace nie ma umowy powierzenia), ewentualnie numer KRS.
+- Domena, hosting Node (np. VPS) z HTTPS, `npm start` (`NODE_ENV=production`), `ADMIN_EMAIL`/`ADMIN_PASSWORD`,
+  `PUBLIC_ORIGIN`, SMTP do wysyłki zapytań (sekcja „Formularz wyceny i e-maile”), `TRUST_PROXY` za reverse proxy,
+  kopie zapasowe `data/` (świeża baza na serwerze – bez kopiowania `data/` z komputera deweloperskiego).
+- Okres przechowywania zapytań z polityki prywatności (12 miesięcy) – usuwanie ręcznie w panelu („Usuń zapytanie”
+  kasuje rekord i pliki); kopie w skrzynce Gmail trzeba usuwać osobno.
+- `og:image`/`og:url` w `index.html` z pełnym adresem domeny, data wejścia w życie polityki prywatności
+  (`COMPANY.privacyEffectiveFrom` w `shared/site.js`, format `RRRR-MM-DD`), potwierdzenie przez właścicielkę odbiorców
+  danych (przy Google Workspace polityka może mówić o umowie powierzenia z Google – darmowy Gmail jej nie daje),
+  ewentualnie numer KRS.
 - Logo (wektor) i prawdziwe zdjęcia realizacji oraz zakładu (B2B) w miejsce zdjęć poglądowych.
 
 ## Czego brakuje do wersji produkcyjnej (konfigurator – kolejne etapy)

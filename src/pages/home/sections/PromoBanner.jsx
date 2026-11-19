@@ -48,7 +48,8 @@ export default function PromoBanner() {
   return (
     <section className="h-promo">
       <div className="h-container">
-        <div ref={cardRef} className="h-promo-card">
+        {/* --b2b: jasne zdjęcie hali – na telefonie mocniejsze przyciemnienie (promo.css) */}
+        <div ref={cardRef} className={`h-promo-card${FEATURES.configurator ? '' : ' h-promo-card--b2b'}`}>
           <div className="h-promo-media">
             <Img src={IMAGE.src} alt={IMAGE.alt} frameClass="h-promo-frame" sizes={IMAGE_SIZES} />
           </div>

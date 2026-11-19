@@ -175,7 +175,19 @@ export default function HomeNav() {
 
   const userLink = user ? (user.role === 'admin' ? '/admin' : '/projekty') : '/logowanie';
   const showAccount = FEATURES.accounts || Boolean(user); // w wizytówce ikona konta tylko dla zalogowanego (panel)
-  const onHome = location.pathname === '/';
+  // adres bez końcowego ukośnika i wielkich liter (router traktuje /Kontakt/ jak /kontakt) – jak w App.jsx
+  const path = location.pathname.replace(/\/+$/, '').toLowerCase() || '/';
+  const onHome = path === '/';
+
+  // Logo na stronie głównej bez kotwicy prowadzi pod ten sam adres – router nie zmienia wtedy ani strony, ani
+  // przewinięcia, więc na górę wracamy sami (płynnie, chyba że ktoś ograniczył animacje w systemie). Klatkę później,
+  // gdy zamknięte menu mobilne zdejmie już blokadę przewijania dokumentu.
+  const onLogo = () => {
+    closeAll();
+    if (!onHome || location.hash) return;
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' }));
+  };
 
   return (
     <header
@@ -188,7 +200,7 @@ export default function HomeNav() {
       </a>
 
       <div className="hnav__bar">
-        <Link to="/" className="hnav__logo" aria-label={`${COMPANY.brand} – strona główna`} onClick={closeAll}>
+        <Link to="/" className="hnav__logo" aria-label={`${COMPANY.brand} – strona główna`} onClick={onLogo}>
           <svg className="hnav__mark" viewBox="0 0 32 32" aria-hidden="true">
             <rect x="1" y="1" width="30" height="30" rx="8" fill="currentColor" />
             <path d="M9 22V10h14v12M9 16h14M16 10v12" stroke="var(--hnav-mark-ink)" strokeWidth="2.2" fill="none" />
@@ -282,8 +294,8 @@ export default function HomeNav() {
               key={l.to}
               to={l.to}
               onHome={onHome}
-              className={`hnav__item${location.pathname === l.to ? ' is-active' : ''}`}
-              aria-current={location.pathname === l.to ? 'page' : undefined}
+              className={`hnav__item${path === l.to ? ' is-active' : ''}`}
+              aria-current={path === l.to ? 'page' : undefined}
             >
               {l.label}
             </NavTo>

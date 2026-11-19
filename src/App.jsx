@@ -80,12 +80,35 @@ function instantly(scroll) {
 // Pozycje przewinięcia wpisów historii (tylko w pamięci karty) – „Wstecz” wraca tam, skąd się wyszło.
 const scrollPositions = new Map();
 
+// Wejście z innej podstrony na sekcję (/#o-nas): fokus na sekcji, żeby Tab i czytnik ekranu zaczynały od niej – jak
+// po zwykłym przejściu do kotwicy (inaczej zostają na początku dokumentu). Sekcja dostaje tabindex="-1" tylko na czas
+// fokusu. Fokus zabieramy wyłącznie z <body> albo z ogłoszenia tytułu strony – nie temu, kto w trakcie wczytywania
+// strony przeszedł już Tabem dalej.
+function focusAnchor(el, announcer) {
+  const active = document.activeElement;
+  if (active && active !== document.body && active !== announcer) return;
+  if (el.tabIndex < 0 && !el.hasAttribute('tabindex')) {
+    el.setAttribute('tabindex', '-1');
+    el.setAttribute('data-anchor-focus', ''); // styles.css: bez obwódki wokół całej sekcji (fokus z kodu)
+    el.addEventListener(
+      'blur',
+      () => {
+        el.removeAttribute('tabindex');
+        el.removeAttribute('data-anchor-focus');
+      },
+      { once: true },
+    );
+  }
+  el.focus({ preventScroll: true });
+}
+
 // Przewijanie przy zmianie strony:
 // - „Wstecz”/„Dalej” na inną podstronę przywraca zapamiętaną pozycję,
 // - kotwica (np. /#kontakt po F5 albo wejściu z zewnątrz) przewija do sekcji także wtedy, gdy leniwa strona
-//   jeszcze się wczytuje (element szukany w kolejnych klatkach zamiast przewijania na górę),
+//   jeszcze się wczytuje (element szukany w kolejnych klatkach zamiast przewijania na górę); po wejściu z innej
+//   strony sekcja dostaje też fokus,
 // - nowa podstrona startuje od góry.
-function ScrollManager() {
+function ScrollManager({ announcerRef }) {
   const { pathname, search, hash, key } = useLocation();
   const navType = useNavigationType();
   const entry = `${key}|${pathname}${search}${hash}`;
@@ -129,9 +152,13 @@ function ScrollManager() {
       const toAnchor = () => {
         const el = document.getElementById(id);
         if (el) {
-          // na tej samej stronie płynnie (jak zwykła kotwica), po wejściu na stronę – od razu
+          // na tej samej stronie płynnie (jak zwykła kotwica – fokus przenosi sama przeglądarka), po wejściu na stronę –
+          // od razu i z fokusem (ten efekt działa po RouteAnnouncer, więc fokus zostaje na sekcji)
           if (samePage) el.scrollIntoView();
-          else instantly(() => el.scrollIntoView());
+          else {
+            instantly(() => el.scrollIntoView());
+            focusAnchor(el, announcerRef.current);
+          }
         } else if (performance.now() - started < 10000) {
           raf = requestAnimationFrame(toAnchor);
         }
@@ -152,10 +179,10 @@ function ScrollManager() {
 // Tytuł karty dla każdej trasy. Po przejściu na inną podstronę fokus trafia na ukryty akapit z nazwą strony
 // na początku dokumentu: czytnik ekranu ją odczyta, a Tab zaczyna od nawigacji – jak po zwykłym wczytaniu strony
 // (inaczej fokus zostaje na znikniętym linku, czyli na <body>). Pierwsze wejście ogłasza sama przeglądarka.
-function RouteAnnouncer() {
+// Przy wejściu na sekcję (/#o-nas) fokus przejmuje potem sekcja (ScrollManager).
+function RouteAnnouncer({ announcerRef }) {
   const { pathname } = useLocation();
   const title = titleFor(pathname);
-  const ref = useRef(null);
   const mounted = useRef(false);
 
   useEffect(() => {
@@ -164,13 +191,13 @@ function RouteAnnouncer() {
       mounted.current = true;
       return;
     }
-    const el = ref.current;
+    const el = announcerRef.current;
     if (!el) return;
     el.textContent = title;
     el.focus({ preventScroll: true });
-  }, [title]);
+  }, [title, announcerRef]);
 
-  return <p ref={ref} tabIndex={-1} style={VISUALLY_HIDDEN} />;
+  return <p ref={announcerRef} tabIndex={-1} style={VISUALLY_HIDDEN} />;
 }
 
 // Błąd wczytania pliku podstrony: zwykle stara karta po nowym wdrożeniu (pliki w /assets mają nowe nazwy)
@@ -195,7 +222,8 @@ function reloadOnce() {
 }
 
 // Granica błędów podstron: błąd ładowania albo renderu strony nie zostawia białego ekranu – nawigacja zostaje,
-// a w miejscu strony jest komunikat z przyciskiem „Odśwież”. Zmiana trasy czyści błąd.
+// a w miejscu strony jest komunikat z przyciskiem „Odśwież”. Zmiana trasy czyści błąd. Komunikat zastępuje stronę
+// razem z jej <main> (i h1), więc ma własne.
 class RouteErrorBoundary extends Component {
   state = { error: null, reloading: false, resetKey: this.props.resetKey };
 
@@ -218,9 +246,9 @@ class RouteErrorBoundary extends Component {
     if (reloading) return <div className="page-loading">Wczytywanie aktualnej wersji strony…</div>;
     const chunk = isChunkError(error);
     return (
-      <div className={`page narrow route-error ${this.props.home ? 'route-error--home' : ''}`}>
+      <main id="tresc" className={`page narrow route-error ${this.props.home ? 'route-error--home' : ''}`}>
         <div role="alert">
-          <h2>Nie udało się wczytać strony</h2>
+          <h1>Nie udało się wczytać strony</h1>
           <p>
             {chunk
               ? 'Nie udało się pobrać plików strony. Sprawdź połączenie z internetem i odśwież stronę.'
@@ -237,7 +265,7 @@ class RouteErrorBoundary extends Component {
             </Link>
           )}
         </div>
-      </div>
+      </main>
     );
   }
 }
@@ -283,31 +311,47 @@ function Navbar() {
             </button>
           </>
         ) : (
-          <>
-            <Link className="btn btn-sm btn-ghost" to="/logowanie">
-              Zaloguj
-            </Link>
-            {FEATURES.accounts && (
+          // w wizytówce bez kont klientów logowanie służy tylko firmie (panel) – firma wchodzi na /logowanie
+          // bezpośrednio, a publiczne strony (np. 404) nie pokazują wejścia do ukrytego panelu
+          FEATURES.accounts && (
+            <>
+              <Link className="btn btn-sm btn-ghost" to="/logowanie">
+                Zaloguj
+              </Link>
               <Link className="btn btn-sm btn-primary" to="/rejestracja">
                 Załóż konto
               </Link>
-            )}
-          </>
+            </>
+          )
         )}
       </div>
     </header>
   );
 }
 
+// Strony „aplikacji” (logowanie, panel, 404) – główny punkt orientacyjny strony dla czytników ekranu. Podstrony
+// wizytówki (PageShell, HomePage) i konfiguratory (Viewport) mają własny <main>. Wewnątrz elementu trasy, a nie wokół
+// <Routes>: zmiana struktury drzewa przy przejściu wizytówka ↔ aplikacja przemontowałaby granicę Suspense (zamiast
+// starej strony do czasu wczytania nowej mignąłby ekran „Ładowanie…”).
+function AppMain({ children }) {
+  return <main id="tresc">{children}</main>;
+}
+
+// Adres bez końcowych ukośników i wielkich liter: router dopasowuje /kontakt/ i /Kontakt do tej samej trasy,
+// więc nawigacja i wygląd też muszą być te same.
+const normalizePath = (pathname) => pathname.replace(/\/+$/, '').toLowerCase() || '/';
+
 function Shell() {
   const { pathname } = useLocation();
-  const isHome = pathname === '/';
-  const isSite = SITE_PATHS.has(pathname);
+  const normalized = normalizePath(pathname);
+  const isHome = normalized === '/';
+  const isSite = SITE_PATHS.has(normalized);
+  const announcerRef = useRef(null);
   return (
     <>
-      <RouteAnnouncer />
+      <RouteAnnouncer announcerRef={announcerRef} />
       {isSite ? <HomeNav /> : <Navbar />}
-      <ScrollManager />
+      <ScrollManager announcerRef={announcerRef} />
       <RouteErrorBoundary resetKey={pathname} home={isSite}>
         <Suspense
           fallback={
@@ -327,35 +371,57 @@ function Shell() {
             ))}
             {StudioPage && <Route path="/studio" element={<StudioPage />} />}
             {FilmExportPage && <Route path="/studio/film" element={<FilmExportPage />} />}
-            <Route path="/logowanie" element={<AuthPage mode="login" />} />
-            {FEATURES.accounts && <Route path="/rejestracja" element={<AuthPage mode="register" />} />}
+            <Route
+              path="/logowanie"
+              element={
+                <AppMain>
+                  <AuthPage mode="login" />
+                </AppMain>
+              }
+            />
+            {FEATURES.accounts && (
+              <Route
+                path="/rejestracja"
+                element={
+                  <AppMain>
+                    <AuthPage mode="register" />
+                  </AppMain>
+                }
+              />
+            )}
             {FEATURES.configurator && <Route path="/konfigurator/kuchnia/:id?" element={<KitchenPage />} />}
             {FEATURES.configurator && <Route path="/konfigurator/szafa/:id?" element={<WardrobePage />} />}
             {FEATURES.accounts && (
               <Route
                 path="/projekty"
                 element={
-                  <RequireAuth>
-                    <Projects />
-                  </RequireAuth>
+                  <AppMain>
+                    <RequireAuth>
+                      <Projects />
+                    </RequireAuth>
+                  </AppMain>
                 }
               />
             )}
             <Route
               path="/admin"
               element={
-                <RequireAuth admin>
-                  <Admin />
-                </RequireAuth>
+                <AppMain>
+                  <RequireAuth admin>
+                    <Admin />
+                  </RequireAuth>
+                </AppMain>
               }
             />
             <Route
               path="*"
               element={
-                <div className="page narrow">
-                  <h2>Nie znaleziono strony</h2>
-                  <Link to="/">Wróć na stronę główną</Link>
-                </div>
+                <AppMain>
+                  <div className="page narrow">
+                    <h1>Nie znaleziono strony</h1>
+                    <Link to="/">Wróć na stronę główną</Link>
+                  </div>
+                </AppMain>
               }
             />
           </Routes>
